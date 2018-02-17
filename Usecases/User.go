@@ -8,11 +8,16 @@ import (
 	"errors"
 	"docnota/Utils"
 	"unicode/utf8"
+	"strconv"
 )
 
 func CreateUser(user *Models.User, db *sql.DB) error{
-	if user.Exist(db){
-		return errors.New("user already exists")
+	if !Utils.EmailValid.MatchString(user.Email){
+		return errors.New("bad email")
+	}
+
+	if utf8.RuneCountInString(user.Password) > 100 || utf8.RuneCountInString(user.Password) < 8{
+		return errors.New("password must be longer than 8 and less than 100 symbols")
 	}
 
 	tx, err := db.Begin()
@@ -48,7 +53,24 @@ func CreateUser(user *Models.User, db *sql.DB) error{
 	return nil
 }
 
-func ConfirmUser(user *Models.User, uid *string, db *sql.DB) (*token, error){
+func ConfirmUser(user *Models.User, uid *string, db *sql.DB) (*string, error){
+	if !Utils.IsLetter.MatchString(user.FirstName) || !Utils.IsLetter.MatchString(user.LastName){
+		return nil, errors.New("first and last name must contains only letters")
+	}
+
+	if utf8.RuneCountInString(user.FirstName) > 100 || utf8.RuneCountInString(user.LastName) > 100{
+		return nil, errors.New("first and last name must be less than 100 symbols")
+	}
+
+	if len(user.FirstName) == 0 || len(user.LastName) == 0{
+		return nil, errors.New("first and last name should not be empty")
+	}
+
+	_, err := strconv.Atoi(user.Country)
+	if err != nil {
+		return nil, errors.New("bad country id")
+	}
+
 	tx, err := db.Begin()
 	if err != nil {
 		log.Println("Usecases.User.ConfirmUser ", err)
@@ -127,13 +149,7 @@ func GetUsers(db *sql.DB) ([]byte, error){
 	return result, nil
 }
 
-func Auth(data []byte, db *sql.DB) (*string, error){
-	user := new(Models.User)
-	err := json.Unmarshal(data, &user)
-	if err != nil {
-		return nil, errors.New("bad json")
-	}
-
+func Auth(user *Models.User, db *sql.DB) (*string, error){
 	if !Utils.EmailValid.MatchString(user.Email){
 		return nil, errors.New("invalid email")
 	}
@@ -175,4 +191,22 @@ func GetUserCompany(requestUser int, token *string, db *sql.DB) ([]byte, error){
 	return result, nil
 }
 
-func GetUserDocuments(){}
+func GetUserDocuments(requestId int, token *string, db *sql.DB)([]Models.Document, error){
+	var isOwner bool
+
+	userId := Utils.ParseToken(token)
+	user := new(Models.User)
+	user.ID = requestId
+	if userId == requestId{
+		isOwner = true
+	}else {
+		isOwner = false
+	}
+
+	documents, err := user.GetDocuments(isOwner, db)
+	if err != nil {
+		return nil, err
+	}
+
+	return documents, nil
+}

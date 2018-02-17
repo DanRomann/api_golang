@@ -8,6 +8,9 @@ import (
 	"docnota/Utils"
 	"docnota/Models"
 	"encoding/json"
+	"log"
+	"github.com/gorilla/mux"
+	"strconv"
 )
 
 func createUser(w http.ResponseWriter, r *http.Request){
@@ -35,17 +38,16 @@ func createUser(w http.ResponseWriter, r *http.Request){
 	SuccessResponse("ok", w)
 }
 
-func ConfirmUser(w http.ResponseWriter, r *http.Request){
+func confirmUser(w http.ResponseWriter, r *http.Request){
 	var curRequest struct{
 		UID			string		`json:"uid"`
 		User		Models.User	`json:"user"`
 	}
 
-	var curResponse struct{
-		Token	string	`json:"token"`
-	}
+	curResponse := TokenResponse{}
 
 	data, err := ioutil.ReadAll(r.Body)
+	log.Println(string(data))
 	if err != nil {
 		ErrResponse(errors.New("bad data"), w)
 		return
@@ -64,4 +66,48 @@ func ConfirmUser(w http.ResponseWriter, r *http.Request){
 	result, _ := json.Marshal(curResponse)
 	DataResponse(result, w)
 
+}
+
+func getUserDocs(w http.ResponseWriter, r *http.Request){
+	token := r.Header.Get("Authorization")
+
+	vars := mux.Vars(r)
+	userId, err := strconv.Atoi(vars["userId"])
+	if err != nil {
+		ErrResponse(errors.New("bad userId"), w)
+	}
+
+	documents, err := Usecases.GetUserDocuments(userId, &token, Utils.Connect)
+	if err != nil {
+		ErrResponse(err, w)
+		return
+	}
+
+	result, _ := json.Marshal(documents)
+	DataResponse(result, w)
+}
+
+func authUser(w http.ResponseWriter, r *http.Request){
+	data, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		ErrResponse(errors.New("bad data"), w)
+		return
+	}
+	defer r.Body.Close()
+
+	user := new(Models.User)
+	err = json.Unmarshal(data, &user)
+	if err != nil {
+		ErrResponse(errors.New("bad json"), w)
+		return
+	}
+
+	token, err := Usecases.Auth(user, Utils.Connect)
+	if err != nil {
+		ErrResponse(err, w)
+		return
+	}
+
+	w.Header().Set("Authorization", *token)
+	SuccessResponse("ok", w)
 }

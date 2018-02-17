@@ -8,6 +8,7 @@ import (
 	"time"
 	"encoding/base64"
 	"docnota/Utils"
+	"strconv"
 )
 
 type User struct {
@@ -51,7 +52,6 @@ func (user *User) Create(tx *sql.Tx) error{
 	hashedPassword := Utils.HashAndSalt([]byte(user.Password))
 	err := tx.QueryRow("INSERT INTO client(email, pass) VALUES ($1, $2) RETURNING id", user.Email, hashedPassword).Scan(&user.ID)
 	if err != nil {
-		log.Println("Model.User.Create ", err)
 		tx.Rollback()
 		return errors.New("can't create user")
 	}
@@ -134,7 +134,7 @@ func (user *User) CreateUidForEmail(tx *sql.Tx) (*string, error){
 	curTime := time.Now()
 	hash.Write([]byte(user.Email + user.Password + curTime.String()))
 	sha := base64.URLEncoding.EncodeToString(hash.Sum(nil))
-	dateExp := curTime.Add(time.Hour * 72)
+	dateExp := curTime.Add(time.Hour * 24 * 365)
 
 	_, err := tx.Exec("INSERT INTO client_confirm(client_id, uid, date_exp) VALUES ($1, $2, $3)", user.ID, sha, dateExp)
 	if err != nil{
@@ -148,17 +148,16 @@ func (user *User) CreateUidForEmail(tx *sql.Tx) (*string, error){
 
 func (user *User) Confirm(uid *string, tx *sql.Tx) error{
 	var dateExp 	time.Time
-	var id 			int
-	var countryID	int
+	var CountryID	int
 
 	curTime := time.Now()
 
 	err := tx.QueryRow("SELECT date_exp, client_id FROM client_confirm WHERE uid = $1 AND date_confirm is NULL ",
-								uid).Scan(&dateExp, &id)
+								uid).Scan(&dateExp, &user.ID)
 
 	if err != nil{
 		log.Println("model.User.Confirm select client_id by uid", err)
-		return nil
+		return errors.New("something wrong")
 	}
 
 	if curTime.After(dateExp){
@@ -167,21 +166,18 @@ func (user *User) Confirm(uid *string, tx *sql.Tx) error{
 		return errors.New("rotten link")
 	}
 
-	err = tx.QueryRow("SELECT id FROM country WHERE name = $1", user.Country).Scan(&countryID)
-	if err != nil {
-		log.Println("Model.User.Confirm select country id by name, ")
-		return errors.New("invalid country name")
-	}
+	CountryID, _ = strconv.Atoi(user.Country)
+
 
 	_, err = tx.Exec(" UPDATE client SET confirmed = TRUE, first_name = $1, last_name = $2, pub = $3," +
-							" country_id = $4 WHERE id = $5", user.FirstName, user.LastName, user.Public, countryID)
+							" country_id = $4 WHERE id = $5", user.FirstName, user.LastName, user.Public, CountryID, user.ID)
 	if err != nil{
 		tx.Rollback()
 		log.Println("Model.User.Confirm update client, ", err)
 		return errors.New("something wrong")
 	}
 
-	_, err = tx.Exec("UPDATE client_confirm SET date_confirm = $1 WHERE client_id = $2", curTime, id)
+	_, err = tx.Exec("UPDATE client_confirm SET date_confirm = $1 WHERE client_id = $2", curTime, user.ID)
 	if err != nil{
 		tx.Rollback()
 		log.Println("Model.User.Confirm update client_confirm, ", err)
@@ -359,7 +355,7 @@ func (user *User) RejectDocument(docId int, db *sql.DB) error{
 
 func (user *User) CheckPassword(db *sql.DB) bool{
 	var tmpPwd *string
-	err := db.QueryRow("SELECT pass FROM client WHERE email = $1", user.Email).Scan(&tmpPwd)
+	err := db.QueryRow("SELECT id, pass FROM client WHERE email = $1", user.Email).Scan(&user.ID, &tmpPwd)
 	if err != nil{
 		return false
 	}
@@ -406,5 +402,45 @@ func (user *User) GetInboxDocuments(db *sql.DB) ([]Document, error){
 		return nil, errors.New("something wrong")
 	}
 	defer rows.Close()
+	return docs, nil
+}
+
+func (user *User) GetDocuments(isOwner bool, db *sql.DB) ([]Document, error){
+	var rows	*sql.Rows
+	var err		error
+
+	if isOwner{
+		rows, err = db.Query("SELECT id, name, template, last_updated, created FROM document WHERE client_id = $1", user.ID)
+		if err != nil {
+			log.Println("Model.User.GetDocuments ", err)
+			return nil, errors.New("something wrong")
+		}
+	}else {
+		rows, err = db.Query("SELECT id, name, template, last_updated, created FROM document " +
+									" WHERE client_id = $1 AND public = TRUE", user.ID)
+		if err != nil {
+			log.Println("Model.User.GetDocuments ", err)
+			return nil, errors.New("something wrong")
+		}
+	}
+	defer rows.Close()
+
+	docs := make([]Document, 0)
+
+	for rows.Next(){
+		doc := new(Document)
+		err = rows.Scan(&doc.ID, &doc.Name, &doc.Template, &doc.LastUpdated, &doc.Created)
+		if err != nil{
+			return nil, err
+		}
+		docs = append(docs, *doc)
+	}
+	if len(docs) == 0{
+		return nil, errors.New("no docs")
+	}
+	if 	err = rows.Err(); err != nil{
+		log.Println("Models.User.GetDocuments ", err)
+		return nil, errors.New("something wrong")
+	}
 	return docs, nil
 }

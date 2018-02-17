@@ -33,7 +33,6 @@ func ParseToken(tokenString *string) int {
 		return []byte(secret), nil
 	})
 	if err != nil {
-		log.Println("Utils.Token.ParseToken ", err)
 		return 0
 	}
 
