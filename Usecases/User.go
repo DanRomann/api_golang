@@ -118,12 +118,15 @@ func SearchUser(data []byte, db *sql.DB) ([]byte, error){
 	return data, nil
 }
 
-func GetUser(requestUser int, token *string, db *sql.DB) ([]byte, error){
+func GetUser(requestUser int, token *string, db *sql.DB) (*Models.User, error){
 	var isOwner bool
+
 	userId := Utils.ParseToken(token)
-	user := Models.User{
-		ID: userId,
-	}
+
+
+	user := new(Models.User)
+	user.ID = requestUser
+
 	if userId == requestUser{
 		isOwner = true
 	}else {
@@ -135,8 +138,7 @@ func GetUser(requestUser int, token *string, db *sql.DB) ([]byte, error){
 		return nil, err
 	}
 
-	result, _ := json.Marshal(user)
-	return result, nil
+	return user, nil
 }
 
 func GetUsers(db *sql.DB) ([]byte, error){
@@ -191,7 +193,7 @@ func GetUserCompany(requestUser int, token *string, db *sql.DB) ([]byte, error){
 	return result, nil
 }
 
-func GetUserDocuments(requestId int, token *string, db *sql.DB)([]Models.Document, error){
+func GetUserDocuments(requestId int, isTemplate bool, token *string, db *sql.DB)([]Models.Document, error){
 	var isOwner bool
 
 	userId := Utils.ParseToken(token)
@@ -203,7 +205,7 @@ func GetUserDocuments(requestId int, token *string, db *sql.DB)([]Models.Documen
 		isOwner = false
 	}
 
-	documents, err := user.GetDocuments(isOwner, db)
+	documents, err := user.GetDocuments(isOwner, isTemplate db)
 	if err != nil {
 		return nil, err
 	}

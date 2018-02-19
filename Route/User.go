@@ -8,7 +8,6 @@ import (
 	"docnota/Utils"
 	"docnota/Models"
 	"encoding/json"
-	"log"
 	"github.com/gorilla/mux"
 	"strconv"
 )
@@ -44,10 +43,7 @@ func confirmUser(w http.ResponseWriter, r *http.Request){
 		User		Models.User	`json:"user"`
 	}
 
-	curResponse := TokenResponse{}
-
 	data, err := ioutil.ReadAll(r.Body)
-	log.Println(string(data))
 	if err != nil {
 		ErrResponse(errors.New("bad data"), w)
 		return
@@ -61,11 +57,8 @@ func confirmUser(w http.ResponseWriter, r *http.Request){
 		return
 	}
 
-	curResponse.Token = *token
-
-	result, _ := json.Marshal(curResponse)
-	DataResponse(result, w)
-
+	w.Header().Set("Authorization", *token)
+	SuccessResponse("ok", w)
 }
 
 func getUserDocs(w http.ResponseWriter, r *http.Request){
@@ -77,7 +70,27 @@ func getUserDocs(w http.ResponseWriter, r *http.Request){
 		ErrResponse(errors.New("bad userId"), w)
 	}
 
-	documents, err := Usecases.GetUserDocuments(userId, &token, Utils.Connect)
+	documents, err := Usecases.GetUserDocuments(userId, false, &token, Utils.Connect)
+	if err != nil {
+		ErrResponse(err, w)
+		return
+	}
+
+	result, _ := json.Marshal(documents)
+	DataResponse(result, w)
+}
+
+func getUserTemplate(w http.ResponseWriter, r *http.Request){
+	token := r.Header.Get("Authorization")
+
+
+	vars := mux.Vars(r)
+	userId, err := strconv.Atoi(vars["userId"])
+	if err != nil {
+		ErrResponse(errors.New("bad userId"), w)
+	}
+
+	documents, err := Usecases.GetUserDocuments(userId, true, &token, Utils.Connect)
 	if err != nil {
 		ErrResponse(err, w)
 		return
@@ -110,4 +123,25 @@ func authUser(w http.ResponseWriter, r *http.Request){
 
 	w.Header().Set("Authorization", *token)
 	SuccessResponse("ok", w)
+}
+
+func getUser(w http.ResponseWriter, r *http.Request){
+	token := r.Header.Get("Authorization")
+	vars := mux.Vars(r)
+
+	requestUser, err := strconv.Atoi(vars["userId"])
+	if err != nil {
+		ErrResponse(errors.New("bad user id"), w)
+		return
+	}
+
+	user, err := Usecases.GetUser(requestUser, &token, Utils.Connect)
+	if err != nil {
+		ErrResponse(err, w)
+		return
+	}
+
+	result, _ := json.Marshal(user)
+
+	DataResponse(result, w)
 }

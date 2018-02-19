@@ -35,7 +35,7 @@ type UserInteraction interface{
 	Get(isOwner bool, db *sql.DB) error
 	GetUserCompany(isOwner bool, db *sql.DB) ([]Company, error)
 	GetByEmail(db *sql.DB) error
-	GetDocuments(db *sql.DB) ([]Document, error)
+	GetDocuments(isOwner bool, isTemplate bool, db *sql.DB) ([]Document, error)
 	GetInboxDocuments(db *sql.DB) ([]Document, error)
 
 	UpdatePassword(passw *string, db *sql.DB) error
@@ -405,22 +405,30 @@ func (user *User) GetInboxDocuments(db *sql.DB) ([]Document, error){
 	return docs, nil
 }
 
-func (user *User) GetDocuments(isOwner bool, db *sql.DB) ([]Document, error){
+func (user *User) GetDocuments(isOwner bool, isTemplate bool, db *sql.DB) ([]Document, error){
 	var rows	*sql.Rows
 	var err		error
 
 	if isOwner{
-		rows, err = db.Query("SELECT id, name, template, last_updated, created FROM document WHERE client_id = $1", user.ID)
+		if isTemplate{
+			rows, err = db.Query("SELECT id, name, last_updated, created FROM document WHERE client_id = $1" +
+				" AND template = TRUE", user.ID)
+		}else {
+			rows, err = db.Query("SELECT id, name, last_updated, created FROM document WHERE client_id = $1"+
+				" AND template = FALSE", user.ID)
+		}
 		if err != nil {
-			log.Println("Model.User.GetDocuments ", err)
+			log.Println("Models.User.GetDocuments ", err)
 			return nil, errors.New("something wrong")
 		}
 	}else {
-		rows, err = db.Query("SELECT id, name, template, last_updated, created FROM document " +
-									" WHERE client_id = $1 AND public = TRUE", user.ID)
-		if err != nil {
-			log.Println("Model.User.GetDocuments ", err)
-			return nil, errors.New("something wrong")
+		if isTemplate{
+			rows, err = db.Query("SELECT id, name, last_updated, created FROM document " +
+				" WHERE client_id = $1 AND public = TRUE AND template = TRUE", user.ID)
+		}else {
+			rows, err = db.Query("SELECT id, name, last_updated, created FROM document "+
+				" WHERE client_id = $1 AND public = TRUE AND template = FALSE", user.ID)
+
 		}
 	}
 	defer rows.Close()
@@ -429,7 +437,7 @@ func (user *User) GetDocuments(isOwner bool, db *sql.DB) ([]Document, error){
 
 	for rows.Next(){
 		doc := new(Document)
-		err = rows.Scan(&doc.ID, &doc.Name, &doc.Template, &doc.LastUpdated, &doc.Created)
+		err = rows.Scan(&doc.ID, &doc.Name, &doc.LastUpdated, &doc.Created)
 		if err != nil{
 			return nil, err
 		}

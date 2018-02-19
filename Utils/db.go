@@ -23,7 +23,7 @@ func ConnectToDB() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	Connect.SetMaxIdleConns(100)
-	Connect.SetMaxOpenConns(100)
+	Connect.SetMaxIdleConns(30)
+	Connect.SetMaxOpenConns(8)
 }
 
