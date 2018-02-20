@@ -48,3 +48,23 @@ func getDoc(w http.ResponseWriter, r *http.Request) {
 	result, _ := json.Marshal(document)
 	DataResponse(result, w)
 }
+
+//func commitDoc(w http.ResponseWriter, r *http.Request){
+//	data, err := ioutil.ReadAll(r.Body)
+//	if err != nil {
+//		ErrResponse(errors.New("bad data"), w)
+//		return
+//	}
+//	defer r.Body.Close()
+//
+//	document := new(Models.Document)
+//	err = json.Unmarshal(data, &document)
+//	if err != nil {
+//		ErrResponse(errors.New("bad json"), w)
+//		return
+//	}
+//
+//	token := r.Header.Get("Authorization")
+//
+//
+//}

@@ -109,16 +109,32 @@ func PublicDocuments(isTemplate bool, db *sql.DB) ([]Document, error){
 }
 
 func (doc *Document) Get(db *sql.DB) error{
-	rows, err := db.Query("SELECT id, name, content, ord, parent_id FROM get_all_blocks($1)", doc.ID)
+	rows, err := db.Query(`
+								WITH RECURSIVE get_all_blocks(id, parent_id, name, content, ord) AS(
+								-- Get root blocks
+								SELECT block.id, db.parent_block, block.name, block.content, db.ord FROM block
+									JOIN doc_block db ON block.id = db.block_id
+								  		WHERE db.doc_id = $1 AND db.parent_block IS NULL
+							
+								UNION ALL
+
+							  	-- Get child blocks
+							 	SELECT block.id, db.parent_block, block.name, block.content, db.ord FROM block
+									JOIN doc_block db ON block.id = db.block_id
+									JOIN get_all_blocks gab ON gab.id = db.parent_block
+								) SELECT * FROM get_all_blocks`, doc.ID)
 	if err != nil {
 		log.Println("Models.Document.Get ", err)
 		return errors.New("something wrong")
 	}
-
 	blocks := make([]Block, 0)
 	for rows.Next() {
+		var parentId sql.NullString
 		block := new(Block)
-		err = rows.Scan(&block.BlockId, &block.Name, &block.Content, &block.Order, &block.ParentID)
+		err = rows.Scan(&block.Id, &parentId, &block.Name, &block.Content, &block.Order)
+		if parentId.Valid{
+			block.ParentID = parentId.String
+		}
 		if err != nil {
 			log.Println("Models.Document.Get ", err)
 			return errors.New("something wrong")
@@ -141,6 +157,10 @@ func (doc *Document) Get(db *sql.DB) error{
 		return errors.New("something wrong")
 	}
 	defer rows.Close()
+	return nil
+}
+
+func (doc *Document) Commit(db *sql.DB) error  {
 	return nil
 }
 

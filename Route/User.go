@@ -145,3 +145,23 @@ func getUser(w http.ResponseWriter, r *http.Request){
 
 	DataResponse(result, w)
 }
+
+func getUserInbox(w http.ResponseWriter, r *http.Request){
+	token := r.Header.Get("Authorization")
+	vars := mux.Vars(r)
+
+	requestUser, err := strconv.Atoi(vars["userId"])
+	if err != nil {
+		ErrResponse(errors.New("bad user id"), w)
+		return
+	}
+
+	documents, err := Usecases.GetUserInboxDocument(requestUser, &token, Utils.Connect)
+	if err != nil {
+		ErrResponse(err, w)
+		return
+	}
+
+	result, _ := json.Marshal(documents)
+	DataResponse(result, w)
+}

@@ -121,7 +121,10 @@ func SearchUser(data []byte, db *sql.DB) ([]byte, error){
 func GetUser(requestUser int, token *string, db *sql.DB) (*Models.User, error){
 	var isOwner bool
 
-	userId := Utils.ParseToken(token)
+	userId, err := Utils.ParseToken(token)
+	if err != nil {
+		return nil, err
+	}
 
 
 	user := new(Models.User)
@@ -133,7 +136,7 @@ func GetUser(requestUser int, token *string, db *sql.DB) (*Models.User, error){
 		isOwner = false
 	}
 
-	err := user.Get(isOwner, db)
+	err = user.Get(isOwner, db)
 	if err != nil {
 		return nil, err
 	}
@@ -173,7 +176,10 @@ func Auth(user *Models.User, db *sql.DB) (*string, error){
 func GetUserCompany(requestUser int, token *string, db *sql.DB) ([]byte, error){
 	var isOwner bool
 
-	userId := Utils.ParseToken(token)
+	userId, err := Utils.ParseToken(token)
+	if err != nil {
+		return nil, err
+	}
 	user := new(Models.User)
 	user.ID = userId
 
@@ -196,7 +202,8 @@ func GetUserCompany(requestUser int, token *string, db *sql.DB) ([]byte, error){
 func GetUserDocuments(requestId int, isTemplate bool, token *string, db *sql.DB)([]Models.Document, error){
 	var isOwner bool
 
-	userId := Utils.ParseToken(token)
+	userId, _ := Utils.ParseToken(token)
+
 	user := new(Models.User)
 	user.ID = requestId
 	if userId == requestId{
@@ -205,10 +212,29 @@ func GetUserDocuments(requestId int, isTemplate bool, token *string, db *sql.DB)
 		isOwner = false
 	}
 
-	documents, err := user.GetDocuments(isOwner, isTemplate db)
+	documents, err := user.GetDocuments(isOwner, isTemplate, Utils.Connect)
 	if err != nil {
 		return nil, err
 	}
 
+	return documents, nil
+}
+
+func GetUserInboxDocument(requetId int, token *string, db *sql.DB)([]Models.Document, error){
+	userId, err := Utils.ParseToken(token)
+	if err != nil {
+		return nil, err
+	}
+	if userId != requetId{
+		return nil, errors.New("access denied")
+	}
+
+	user := new(Models.User)
+	user.ID = requetId
+
+	documents, err := user.InboxDocuments(db)
+	if err != nil {
+		return nil, err
+	}
 	return documents, nil
 }

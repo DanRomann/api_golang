@@ -36,7 +36,7 @@ type UserInteraction interface{
 	GetUserCompany(isOwner bool, db *sql.DB) ([]Company, error)
 	GetByEmail(db *sql.DB) error
 	GetDocuments(isOwner bool, isTemplate bool, db *sql.DB) ([]Document, error)
-	GetInboxDocuments(db *sql.DB) ([]Document, error)
+	InboxDocuments(db *sql.DB) ([]Document, error)
 
 	UpdatePassword(passw *string, db *sql.DB) error
 	UpdateAvatar(path string, db *sql.DB) error
@@ -69,14 +69,19 @@ func (user *User) Exist(db *sql.DB) bool{
 func (user *User) Get(isOwner bool, db *sql.DB) error{
 	var err 	error
 	var confirm	bool
+	var avatar 	sql.NullString
 
 	if isOwner{
-		err = db.QueryRow(" SELECT email, first_name, last_name, verified, public, country, avatar, confirmed " +
+		err = db.QueryRow(" SELECT email, first_name, last_name, verified, pub, country.name, avatar, confirmed " +
 								" FROM client " +
 								" JOIN country ON country.id = client.country_id " +
-								" WHERE client.id = $1").Scan(&user.Email, &user.FirstName, &user.LastName, &user.Verified,
-								 &user.Public, &user.Country, &user.Avatar, confirm)
+								" WHERE client.id = $1", user.ID).Scan(&user.Email, &user.FirstName, &user.LastName, &user.Verified,
+								 &user.Public, &user.Country, &avatar, &confirm)
+		if avatar.Valid{
+			user.Avatar = avatar.String
+		}
 		if err != nil {
+			log.Println(err)
 			return errors.New("user not exists")
 		}
 		if !confirm{
@@ -379,7 +384,7 @@ func (user *User) AcceptDoc(docId, db sql.DB) error{
 	return nil
 }
 
-func (user *User) GetInboxDocuments(db *sql.DB) ([]Document, error){
+func (user *User) InboxDocuments(db *sql.DB) ([]Document, error){
 	rows, err := db.Query(" SELECT id, name, document.client_id FROM document " +
 								" JOIN recieve_document document2 ON document.id = document2.document " +
 								" WHERE document2.client_id = $1", user.ID)
