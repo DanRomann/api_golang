@@ -204,6 +204,7 @@ func GetUserDocuments(requestId int, isTemplate bool, token *string, db *sql.DB)
 
 	userId, _ := Utils.ParseToken(token)
 
+
 	user := new(Models.User)
 	user.ID = requestId
 	if userId == requestId{
@@ -225,6 +226,7 @@ func GetUserInboxDocument(requetId int, token *string, db *sql.DB)([]Models.Docu
 	if err != nil {
 		return nil, err
 	}
+
 	if userId != requetId{
 		return nil, errors.New("access denied")
 	}
@@ -237,4 +239,21 @@ func GetUserInboxDocument(requetId int, token *string, db *sql.DB)([]Models.Docu
 		return nil, err
 	}
 	return documents, nil
+}
+
+func SendDocumentToUser(docId, userId int, token *string, db *sql.DB) error{
+	userId, err := Utils.ParseToken(token)
+	if err != nil {
+		return err
+	}
+
+	document := new(Models.Document)
+	document.ID = docId
+
+	err = document.SendDocumentToUser(userId, db)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }

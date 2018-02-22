@@ -8,6 +8,9 @@ import (
 	"github.com/gorilla/mux"
 	"strconv"
 	"errors"
+	"io/ioutil"
+	"docnota/Models"
+	"log"
 )
 
 func getPublicDocs(w http.ResponseWriter, r *http.Request){
@@ -49,22 +52,68 @@ func getDoc(w http.ResponseWriter, r *http.Request) {
 	DataResponse(result, w)
 }
 
-//func commitDoc(w http.ResponseWriter, r *http.Request){
-//	data, err := ioutil.ReadAll(r.Body)
-//	if err != nil {
-//		ErrResponse(errors.New("bad data"), w)
-//		return
-//	}
-//	defer r.Body.Close()
-//
-//	document := new(Models.Document)
-//	err = json.Unmarshal(data, &document)
-//	if err != nil {
-//		ErrResponse(errors.New("bad json"), w)
-//		return
-//	}
-//
-//	token := r.Header.Get("Authorization")
-//
-//
-//}
+func copyDoc(w http.ResponseWriter, r *http.Request){
+	token := r.Header.Get("Authorization")
+	vars := mux.Vars(r)
+	docId, err := strconv.Atoi(vars["docId"])
+	if err != nil {
+		ErrResponse(errors.New("bad doc id"), w)
+		return
+	}
+
+	err = Usecases.CopyDocument(docId, &token, Utils.Connect)
+}
+
+func createDoc(w http.ResponseWriter, r *http.Request){
+	token := r.Header.Get("Authorization")
+	data, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		ErrResponse(errors.New("bad data"), w)
+		return
+	}
+
+	doc := new(Models.Document)
+	err = json.Unmarshal(data, &doc)
+	if err != nil {
+		ErrResponse(errors.New("bad json"), w)
+		return
+	}
+
+	doc, err = Usecases.CreateDocument(doc, &token, Utils.Connect)
+	if err != nil {
+		ErrResponse(err, w)
+		return
+	}
+
+	result, _ := json.Marshal(doc)
+	DataResponse(result, w)
+}
+
+func commitDoc(w http.ResponseWriter, r *http.Request){
+	token := r.Header.Get("Authorization")
+
+	data, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		ErrResponse(errors.New("bad data"), w)
+		return
+	}
+	defer r.Body.Close()
+
+	block := new(Models.Block)
+	err = json.Unmarshal(data, &block)
+	if err != nil {
+		ErrResponse(errors.New("bad json"), w)
+		return
+	}
+
+	log.Printf("%+v\n", block)
+
+	block, err = Usecases.ChangeDoc(block, &token, Utils.Connect)
+	if err != nil {
+		ErrResponse(err, w)
+		return
+	}
+
+	result, _ := json.Marshal(block)
+	DataResponse(result, w)
+}

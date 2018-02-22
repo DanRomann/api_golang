@@ -18,12 +18,18 @@ func Route() *mux.Router {
 	r.HandleFunc("/user/{userId}/docs", getUserDocs).Methods("GET")
 	r.HandleFunc("/user/{userId}/templates", getUserTemplate).Methods("GET")
 	r.HandleFunc("/user/{userId}/inbox", getUserInbox).Methods("GET")
+	r.HandleFunc("/user/send_doc", sendDocToUser).Methods("POST")
+
 
 
 	r.HandleFunc("/document/templates", getPublicTemplates).Methods("GET")
 	r.HandleFunc("/document/public", getPublicDocs).Methods("GET")
 	r.HandleFunc("/document/{docId}", getDoc).Methods("GET")
-	//r.HandleFunc("/document", commitDoc).Methods("PUT")
+	r.HandleFunc("/document/{docId}/copy", copyDoc).Methods("POST")
+	r.HandleFunc("/document", createDoc).Methods("POST")
+	r.HandleFunc("/document/edit", commitDoc).Methods("POST")
+
+	r.HandleFunc("/companies", getCompanies).Methods("GET")
 
 
 	r.HandleFunc("/country", CountryList).Methods("GET")

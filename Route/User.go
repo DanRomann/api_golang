@@ -68,6 +68,7 @@ func getUserDocs(w http.ResponseWriter, r *http.Request){
 	userId, err := strconv.Atoi(vars["userId"])
 	if err != nil {
 		ErrResponse(errors.New("bad userId"), w)
+		return
 	}
 
 	documents, err := Usecases.GetUserDocuments(userId, false, &token, Utils.Connect)
@@ -88,6 +89,7 @@ func getUserTemplate(w http.ResponseWriter, r *http.Request){
 	userId, err := strconv.Atoi(vars["userId"])
 	if err != nil {
 		ErrResponse(errors.New("bad userId"), w)
+		return
 	}
 
 	documents, err := Usecases.GetUserDocuments(userId, true, &token, Utils.Connect)
@@ -164,4 +166,34 @@ func getUserInbox(w http.ResponseWriter, r *http.Request){
 
 	result, _ := json.Marshal(documents)
 	DataResponse(result, w)
+}
+
+func sendDocToUser(w http.ResponseWriter, r *http.Request){
+	var curRequest struct{
+		UserId	int		`json:"user_id"`
+		DocId	int		`json:"doc_id"`
+	}
+
+	token := r.Header.Get("Authorization")
+
+	data, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		ErrResponse(errors.New("something wrong"), w)
+		return
+	}
+
+	err = json.Unmarshal(data, &curRequest)
+	if err != nil {
+		ErrResponse(errors.New("bad json"), w)
+		return
+	}
+
+	err = Usecases.SendDocumentToUser(curRequest.DocId, curRequest.UserId, &token, Utils.Connect)
+	if err != nil {
+		ErrResponse(err, w)
+		return
+	}
+
+	SuccessResponse("ok", w)
+
 }

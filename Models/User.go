@@ -50,7 +50,7 @@ type UserInteraction interface{
 
 func (user *User) Create(tx *sql.Tx) error{
 	hashedPassword := Utils.HashAndSalt([]byte(user.Password))
-	err := tx.QueryRow("INSERT INTO client(email, pass) VALUES ($1, $2) RETURNING id", user.Email, hashedPassword).Scan(&user.ID)
+	err := tx.QueryRow(`INSERT INTO client(email, pass) VALUES ($1, $2) RETURNING id`, user.Email, hashedPassword).Scan(&user.ID)
 	if err != nil {
 		tx.Rollback()
 		return errors.New("can't create user")
@@ -59,7 +59,7 @@ func (user *User) Create(tx *sql.Tx) error{
 }
 
 func (user *User) Exist(db *sql.DB) bool{
-	err := db.QueryRow("SELECT email FROM client WHERE lower(email) = lower($1)", user.Email).Scan(&user.Email)
+	err := db.QueryRow(`SELECT email FROM client WHERE lower(email) = lower($1)`, user.Email).Scan(&user.Email)
 	if err != nil {
 		return false
 	}
@@ -72,10 +72,10 @@ func (user *User) Get(isOwner bool, db *sql.DB) error{
 	var avatar 	sql.NullString
 
 	if isOwner{
-		err = db.QueryRow(" SELECT email, first_name, last_name, verified, pub, country.name, avatar, confirmed " +
-								" FROM client " +
-								" JOIN country ON country.id = client.country_id " +
-								" WHERE client.id = $1", user.ID).Scan(&user.Email, &user.FirstName, &user.LastName, &user.Verified,
+		err = db.QueryRow(` SELECT email, first_name, last_name, verified, pub, country.name, avatar, confirmed
+								 FROM client
+								 JOIN country ON country.id = client.country_id 
+								 WHERE client.id = $1`, user.ID).Scan(&user.Email, &user.FirstName, &user.LastName, &user.Verified,
 								 &user.Public, &user.Country, &avatar, &confirm)
 		if avatar.Valid{
 			user.Avatar = avatar.String
@@ -385,9 +385,9 @@ func (user *User) AcceptDoc(docId, db sql.DB) error{
 }
 
 func (user *User) InboxDocuments(db *sql.DB) ([]Document, error){
-	rows, err := db.Query(" SELECT id, name, document.client_id FROM document " +
-								" JOIN recieve_document document2 ON document.id = document2.document " +
-								" WHERE document2.client_id = $1", user.ID)
+	rows, err := db.Query(`SELECT id, name, rd.client_id, public, template, last_updated, created, description
+								 FROM document JOIN receive_document rd ON document.id = rd.document_id
+								 WHERE rd.client_id = $1`, user.ID)
 	if err != nil {
 		log.Println("Model.User.GetInboxDocument ", err)
 		return nil, errors.New("something wrong")
@@ -395,7 +395,7 @@ func (user *User) InboxDocuments(db *sql.DB) ([]Document, error){
 	docs := make([]Document, 0)
 	for rows.Next(){
 		doc := new(Document)
-		err = rows.Scan(&doc.ID, &doc.Name, &doc.UserId)
+		err = rows.Scan(&doc.ID, &doc.Name, &doc.UserId, &doc.Public, &doc.Template, &doc.LastUpdated, &doc.Created, &doc.Description)
 		if err != nil {
 			log.Println("Model.User.GetInboxDocument ", err)
 			return nil, errors.New("something wrong")
@@ -456,4 +456,17 @@ func (user *User) GetDocuments(isOwner bool, isTemplate bool, db *sql.DB) ([]Doc
 		return nil, errors.New("something wrong")
 	}
 	return docs, nil
+}
+
+func (user *User) HasPermissionToBlock(blockId int, db *sql.DB) bool{
+	err := db.QueryRow(`SELECT id FROM block
+ 							  JOIN document ON document.id = block.doc_id
+ 							  JOIN client ON client.id = document.client_id
+ 							  WHERE parent_id = $1 AND client.id = $2`, blockId, user.ID).Scan(&blockId)
+	if err != nil {
+		log.Println("Midels.User.HasPermissionToBlock ", err)
+		return false
+	}
+	return true
+
 }

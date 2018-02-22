@@ -1,6 +1,10 @@
 package Models
 
-import "database/sql"
+import (
+	"database/sql"
+	"log"
+	"errors"
+)
 
 type Company struct {
 	Id 					int 		`json:"id,omitempty"`
@@ -8,8 +12,6 @@ type Company struct {
 	Description			string  	`json:"description,omitempty"`
 	Public				bool		`json:"public,omitempty"`
 	Country				string		`json:"country,omitempty"`
-	City				string		`json:"city,omitempty"`
-	Street				string		`json:"street,omitempty"`
 }
 
 type Permissions struct {
@@ -33,5 +35,37 @@ type CompanyInteraction interface{
 	GetDocuments(hasPermissions bool, db *sql.DB)
 
 	SendInvite(db *sql.DB) error
+
+}
+
+func CompanyList(db *sql.DB)([]Company, error){
+	rows, err := db.Query(`SELECT company.id, company.name, description, country.name FROM company
+ 								 JOIN country ON country.id = company.country_id
+ 								 WHERE pub = TRUE`)
+	if err != nil {
+		log.Println("Models.Company.CompanyList ", err)
+		return nil, errors.New("something wrong")
+	}
+	defer rows.Close()
+
+	companies := make([]Company, 0)
+
+	for rows.Next(){
+		company := new(Company)
+		err = rows.Scan(&company.Id, &company.Name, &company.Description, &company.Country)
+		if err != nil {
+			log.Println("Models.Company.CompanyList ", err)
+			return nil, errors.New("something wrong")
+		}
+
+		companies = append(companies, *company)
+	}
+
+	if err = rows.Err(); err != nil{
+		log.Println("Models.Company.CompanyList ", err)
+		return nil, errors.New("something wrong")
+	}
+
+	return companies, nil
 
 }

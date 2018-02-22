@@ -26,6 +26,9 @@ func CreateToken(userId int, day int) (*string ,error){
 }
 
 func ParseToken(tokenString *string) (int, error) {
+	if *tokenString == ""{
+		return 0, nil
+	}
 	token, err := jwt.Parse(*tokenString, func(token *jwt.Token) (interface{}, error) {
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
@@ -41,7 +44,6 @@ func ParseToken(tokenString *string) (int, error) {
 			return int(userId), nil
 		}
 		return 0, errors.New("rotten token")
-
 	} else {
 		return 0, nil
 	}
