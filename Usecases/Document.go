@@ -169,6 +169,8 @@ func ChangeDoc(newBlock *Models.Block, token *string, db *sql.DB) (*Models.Block
 				return nil, err
 			}
 			return newBlock, nil
+		}else {
+			return nil, nil
 		}
 
 	}

@@ -64,8 +64,9 @@ func (block *Block) Update(db *sql.DB) error{
  											  name = $2,
  											  content = $3,
  											  ord = $4,
- 											  last_updated = $5 `, parentId, block.Name, block.Content,
- 											  block.Order, time.Now())
+ 											  last_updated = $5
+ 											  WHERE id = $6`, parentId, block.Name, block.Content,
+ 											  block.Order, time.Now(), block.Id)
 	if err != nil {
 		log.Println("Models.Block.Update ", err)
 		return errors.New("something wrong")
@@ -97,9 +98,15 @@ func (block *Block) BelongToDocumentAndUser(userId, docId int, db *sql.DB) bool{
 }
 
 func (block *Block)	Create(db *sql.DB) error{
-	err := db.QueryRow(`INSERT INTO block(name, content, last_updated, parent_id, ord, doc_id)
+	var parentId sql.NullInt64
+	if block.ParentID == 0{
+		parentId.Valid = false
+	}else {
+		parentId.Int64 = int64(block.ParentID)
+	}
+	_, err := db.Exec(`INSERT INTO block(name, content, last_updated, parent_id, ord, doc_id)
 							  VALUES ($1, $2, $3, $4, $5, $6)`, block.Name, block.Content, time.Now(),
-							  block.ParentID, block.Order, block.DocId)
+							  parentId, block.Order, block.DocId)
 	if err != nil {
 		log.Println("Models.Block.Create ", err)
 		return errors.New("something wrong")
