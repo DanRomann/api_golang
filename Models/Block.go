@@ -26,7 +26,6 @@ type BlockInteraction interface{
 	Get(db *sql.DB) error
 	GetChain(db *sql.DB) ([]Block, error)
 	GetBlockHistory(docId int, db *sql.DB) ([]Block, error)
-	Search(query string, db *sql.DB) ([]Block, error)
 
 	Create(db *sql.DB) error
 
@@ -139,6 +138,32 @@ func (block *Block) GetParentChildren(db *sql.DB) ([]Block, error){
 	if err = rows.Err(); err != nil{
 		log.Println("Models.Block.GetParentChilder ", err)
 		return nil, errors.New("something wrong")
+	}
+	return blocks, nil
+}
+
+func SearchBlock(query *string, db *sql.DB) ([]Block, error){
+	rows, err := db.Query(`SELECT id, name, content FROM block 
+								 WHERE fts @@ plainto_tsquery('ru', $1) LIMIT 200`, query)
+	if err != nil{
+		log.Println("Search block ", err)
+		return nil, err
+	}
+	defer rows.Close()
+
+	blocks := make([]Block, 0)
+	for rows.Next(){
+		curBlock := Block{}
+		err := rows.Scan(&curBlock.Id, &curBlock.Name, &curBlock.Content)
+		if err != nil{
+			log.Println("Search block ", err)
+			return nil, err
+		}
+		blocks = append(blocks, curBlock)
+	}
+	if err = rows.Err(); err != nil{
+		log.Println("Search block ", err)
+		return nil, err
 	}
 	return blocks, nil
 }

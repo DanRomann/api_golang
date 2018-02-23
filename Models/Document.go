@@ -71,7 +71,7 @@ func (doc *Document) IsPublic(db *sql.DB) bool{
 func (doc *Document) Create(db *sql.DB) error{
 	curTime := time.Now()
 	err := db.QueryRow(`INSERT INTO document(name, description, client_id, template, public, last_updated,
- 							  created) VALUES($1, $2, $3, $4, $5, $6) RETURNING id`, doc.Name, doc.Description,
+ 							  created) VALUES($1, $2, $3, $4, $5, $6, $7) RETURNING id`, doc.Name, doc.Description,
  							  			doc.UserId, doc.Template, doc.Public, curTime, curTime).Scan(&doc.ID)
 	if err != nil {
 		log.Println("Models.Document.Create ", err)
