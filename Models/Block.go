@@ -8,7 +8,7 @@ import (
 )
 
 type Meta struct {
-	Deleted		bool	`json:"deleted"`
+	Deleted		bool	`json:"deleted,omitempty"`
 }
 
 type Block struct{
