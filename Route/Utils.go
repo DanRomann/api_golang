@@ -9,6 +9,10 @@ type TokenResponse struct{
 	Token	string	`json:"token"`
 }
 
+type SearchQuery struct{
+	Query	string	`json:"query"`
+}
+
 
 func ErrResponse(err error, w http.ResponseWriter){
 	var curResponse struct{
