@@ -53,14 +53,14 @@ func (block *Block) Get(db *sql.DB) error{
 	return nil
 }
 
-func (block *Block) Update(db *sql.DB) error{
+func (block *Block) Update(tx *sql.Tx) error{
 	var parentId sql.NullInt64
 	if block.ParentID == 0{
 		parentId.Valid = false
 	}else {
 		parentId.Int64 = int64(block.ParentID)
 	}
-	_, err := db.Exec(`UPDATE block SET parent_id = $1,
+	_, err := tx.Exec(`UPDATE block SET parent_id = $1,
  											  name = $2,
  											  content = $3,
  											  ord = $4,
@@ -74,8 +74,8 @@ func (block *Block) Update(db *sql.DB) error{
 	return nil
 }
 
-func (block *Block) Delete(db *sql.DB) error{
-	_, err := db.Exec(`DELETE FROM block WHERE id = $1`, block.Id)
+func (block *Block) Delete(tx *sql.Tx) error{
+	_, err := tx.Exec(`DELETE FROM block WHERE id = $1`, block.Id)
 	if err != nil {
 		log.Println("Models.Block.Delete ", err)
 		return errors.New("something wrong")
@@ -97,16 +97,16 @@ func (block *Block) BelongToDocumentAndUser(userId, docId int, db *sql.DB) bool{
 	return true
 }
 
-func (block *Block)	Create(db *sql.DB) error{
+func (block *Block)	Create(tx *sql.Tx) error{
 	var parentId sql.NullInt64
 	if block.ParentID == 0{
 		parentId.Valid = false
 	}else {
 		parentId.Int64 = int64(block.ParentID)
 	}
-	_, err := db.Exec(`INSERT INTO block(name, content, last_updated, parent_id, ord, doc_id)
-							  VALUES ($1, $2, $3, $4, $5, $6)`, block.Name, block.Content, time.Now(),
-							  parentId, block.Order, block.DocId)
+	err := tx.QueryRow(`INSERT INTO block(name, content, last_updated, parent_id, ord, doc_id)
+							  VALUES ($1, $2, $3, $4, $5, $6) RETURNING id`, block.Name, block.Content, time.Now(),
+							  parentId, block.Order, block.DocId).Scan(&block.Id)
 	if err != nil {
 		log.Println("Models.Block.Create ", err)
 		return errors.New("something wrong")

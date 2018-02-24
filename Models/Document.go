@@ -71,7 +71,7 @@ func (doc *Document) IsPublic(db *sql.DB) bool{
 func (doc *Document) Create(db *sql.DB) error{
 	curTime := time.Now()
 	err := db.QueryRow(`INSERT INTO document(name, description, client_id, template, public, last_updated,
- 							  created) VALUES($1, $2, $3, $4, $5, $6) RETURNING id`, doc.Name, doc.Description,
+ 							  created) VALUES($1, $2, $3, $4, $5, $6, $7) RETURNING id`, doc.Name, doc.Description,
  							  			doc.UserId, doc.Template, doc.Public, curTime, curTime).Scan(&doc.ID)
 	if err != nil {
 		log.Println("Models.Document.Create ", err)
@@ -157,15 +157,22 @@ func (doc *Document) Get(db *sql.DB) error{
 	}
 	blocks := make([]Block, 0)
 	for rows.Next() {
-		var parentId sql.NullInt64
+		var parentId 		sql.NullInt64
+		var blockContent 	sql.NullString
+
 		block := new(Block)
-		err = rows.Scan(&block.Id, &parentId, &block.Name, &block.Content, &block.Order, &block.LastUpdated)
+		err = rows.Scan(&block.Id, &parentId, &block.Name, &blockContent, &block.Order, &block.LastUpdated)
 		if err != nil {
 			log.Println("Models.Document.Get ", err)
 			return errors.New("something wrong")
 		}
+
+
 		if parentId.Valid{
 			block.ParentID = int(parentId.Int64)
+		}
+		if blockContent.Valid{
+			block.Content = blockContent.String
 		}
 		blocks = append(blocks, *block)
 	}
@@ -182,7 +189,6 @@ func (doc *Document) Get(db *sql.DB) error{
 	}
 
 	doc.Blocks = blocks
-	//err = doc.Sort()
 	if err != nil{
 		log.Println("Models.Document.Get ", err)
 		return errors.New("something wrong")
@@ -206,6 +212,11 @@ func (doc *Document) GetOwner(db *sql.DB) error{
 }
 
 func (doc *Document) Copy(userId int, tx *sql.Tx) error{
+	_, err := tx.Exec(`SELECT copy_doc($1, $2)`, doc.ID, userId)
+	if err != nil {
+		log.Println("Models.Document.Copy ", err)
+		return errors.New("something wrong")
+	}
 	return nil
 }
 

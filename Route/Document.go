@@ -62,6 +62,11 @@ func copyDoc(w http.ResponseWriter, r *http.Request){
 	}
 
 	err = Usecases.CopyDocument(docId, &token, Utils.Connect)
+	if err != nil {
+		ErrResponse(err, w)
+		return
+	}
+	SuccessResponse("ok", w)
 }
 
 func createDoc(w http.ResponseWriter, r *http.Request){
