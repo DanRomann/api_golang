@@ -57,6 +57,10 @@ func CreateDocument(doc *Models.Document, token *string, db *sql.DB) (*Models.Do
 		return nil, err
 	}
 
+	if userId == 0{
+		return nil, errors.New("access denied")
+	}
+
 	if doc.Name == ""{
 		return nil, errors.New("empty doc name")
 	}
@@ -71,27 +75,35 @@ func CreateDocument(doc *Models.Document, token *string, db *sql.DB) (*Models.Do
 }
 
 func ChangeDoc(newBlock *Models.Block, token *string, db *sql.DB) (*Models.Block, error){
-	var contentChanged, parentChanged, nameChanged, orderChanged bool
+	document := new(Models.Document)
+	document.ID = newBlock.DocId
+	if document.ID == 0{
+		return nil, errors.New("document id is empty")
+	}
+
+	user := new(Models.User)
+	userId, err := Utils.ParseToken(token)
+	user.ID = userId
+	if err != nil {
+		return nil, err
+	}
+	if user.ID == 0{
+		return nil, errors.New("access denied")
+	}
+
+	if newBlock.Order == 0{
+		return nil, errors.New("empty order")
+	}
+
+	if len(newBlock.Content) == 0 && len(newBlock.Name) == 0{
+		return nil, errors.New("empty name and content block")
+	}
 
 	tx, err := db.Begin()
 	if err != nil {
 		log.Println("Usecases.Document.ChangeDoc ", err)
 		return nil, errors.New("something wrong")
 	}
-
-	document := new(Models.Document)
-	document.ID = newBlock.DocId
-	user := new(Models.User)
-	userId, err := Utils.ParseToken(token)
-	if err != nil {
-		tx.Rollback()
-		return nil, err
-	}
-	if userId == 0{
-		tx.Rollback()
-		return nil, errors.New("access denied")
-	}
-	user.ID = userId
 
 
 	//block already exists
@@ -102,25 +114,8 @@ func ChangeDoc(newBlock *Models.Block, token *string, db *sql.DB) (*Models.Block
 			return nil, errors.New("access denied")
 		}
 
-		//Check if the block deleted
+		//Check if the block is deleted
 		if newBlock.Meta.Deleted{
-			children, err := newBlock.GetParentChildren(db)
-			if err != nil {
-				tx.Rollback()
-				return nil, err
-			}
-
-			for id, child := range children{
-				if id > newBlock.Id{
-					child.Id--
-					err = child.Update(tx)
-					if err != nil {
-						tx.Rollback()
-						return nil, err
-					}
-				}
-			}
-
 			err = newBlock.Delete(tx)
 			if err != nil {
 				tx.Rollback()
@@ -128,78 +123,17 @@ func ChangeDoc(newBlock *Models.Block, token *string, db *sql.DB) (*Models.Block
 			}
 		}
 
-		//Get old version block for compare
-		oldBlock := new(Models.Block)
-		oldBlock.Id = newBlock.Id
-		err = oldBlock.Get(db)
+		//Update block
+		err = newBlock.Update(tx)
 		if err != nil {
 			tx.Rollback()
 			return nil, err
 		}
 
-		//Check if the block change parent
-		if oldBlock.ParentID != newBlock.ParentID {
-			//Check user permission for new parent block
-			if !user.HasPermissionToBlock(newBlock.ParentID, db){
-				tx.Rollback()
-				return nil, errors.New("access denied")
-			}
-			parentChanged = true
-
-		}
-
-		if oldBlock.Content != newBlock.Content{
-			contentChanged = true
-		}
-		if oldBlock.Name != newBlock.Name{
-			nameChanged = true
-		}
-		if oldBlock.Order != newBlock.Order{
-			orderChanged = true
-		}
-		log.Println(nameChanged, contentChanged, parentChanged, orderChanged)
-		log.Println("====================")
-
-		if nameChanged || contentChanged || parentChanged || orderChanged{
-			if orderChanged{
-				//pizdec
-				children, err := newBlock.GetParentChildren(db)
-				if err != nil {
-					tx.Rollback()
-					return nil, err
-				}
-
-				for id, child := range children {
-					if id >= newBlock.Order{
-						child.Order++
-						err = child.Update(tx)
-						if err != nil {
-							tx.Rollback()
-							return nil, err
-						}
-					}
-				}
-
-			}
-			err = newBlock.Update(tx)
-			if err != nil {
-				tx.Rollback()
-				return nil, err
-			}
-			err = tx.Commit()
-			if err != nil {
-				log.Println("Usecases.Document.ChangeDoc ", err)
-				return nil, errors.New("something wrong")
-			}
-			return newBlock, nil
-		}else {
-			return nil, nil
-		}
-
 	}
 
 
-	//Block are created
+	//New block
 	//Check permission for user to doc
 	if !document.BelongToUser(user.ID, db){
 		tx.Rollback()

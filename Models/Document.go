@@ -10,7 +10,7 @@ import (
 type Document struct {
 	ID          int       `json:"doc_id,omitempty"`
 	UserId		int		  `json:"user_id,omitempty q"`
-	Name        string    `json:"name,omitempty"`
+	Name        string    `json:"name"`
 	Description	string	  `json:"description"`
 	Blocks      []Block   `json:"blocks,omitempty"`
 	Template    bool      `json:"template,omitempty"`
@@ -147,8 +147,7 @@ func (doc *Document) Get(db *sql.DB) error{
 								b.content,
 								b.ord,
 								b.last_updated
-								FROM block
-								JOIN block b ON block.id = b.parent_id
+								FROM block b
 								JOIN tree ON tree.id = b.parent_id
 							) SELECT id, parent_id, name, content, ord, last_updated FROM tree ORDER BY path`, doc.ID)
 	if err != nil {

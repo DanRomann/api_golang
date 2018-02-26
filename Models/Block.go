@@ -105,7 +105,7 @@ func (block *Block)	Create(tx *sql.Tx) error{
 	}
 	err := tx.QueryRow(`INSERT INTO block(name, content, last_updated, parent_id, ord, doc_id)
 							  VALUES ($1, $2, $3, $4, $5, $6) RETURNING id`, block.Name, block.Content, time.Now(),
-							  parentId, block.Order, block.DocId).Scan(&block.Id)
+							  parentId.Int64, block.Order, block.DocId).Scan(&block.Id)
 	if err != nil {
 		log.Println("Models.Block.Create ", err)
 		return errors.New("something wrong")
