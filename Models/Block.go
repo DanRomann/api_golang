@@ -79,7 +79,7 @@ func (block *Block) Delete(tx *sql.Tx) error{
 
 func (block *Block) BelongToDocumentAndUser(userId, docId int, db *sql.DB) bool{
 	var err  error
-	var name, parentName string
+	var name string
 	if block.ParentID != 0 {
 		err = db.QueryRow(`SELECT block.name FROM block
 								 JOIN document ON document.id = block.doc_id
