@@ -12,14 +12,15 @@ type Meta struct {
 }
 
 type Block struct{
-	Id          int    `json:"block_id,omitempty"`
-	ParentID    int    `json:"parent_id,omitempty"`
-	Name        string `json:"name,omitempty"`
-	Content     string `json:"content,omitempty"`
-	Order       int    `json:"order,omitempty"`
-	LastUpdated string `json:"date,omitempty"`
+	Id          int		`json:"block_id,omitempty"`
+	ParentID    int		`json:"parent_id,omitempty"`
+	Name        string	`json:"name,omitempty"`
+	Content     string	`json:"content,omitempty"`
+	Order       int		`json:"order,omitempty"`
+	LastUpdated string	`json:"date,omitempty"`
 	DocId		int		`json:"doc_id,omitempty"`
-	Meta        Meta   `json:"meta,omitempty"`
+	Ltree		string	`json:"ltree,omitempty"`
+	Meta        Meta	`json:"meta,omitempty"`
 }
 
 type BlockInteraction interface{
@@ -74,7 +75,7 @@ func (block *Block) Update(tx *sql.Tx) error{
 }
 
 func (block *Block) Delete(tx *sql.Tx) error{
-	_, err := tx.Exec(`DELETE FROM block WHERE id = $1`, block.Id)
+	_, err := tx.Exec(`SELECT delete_block($1, $2, $3)`, block.Id)
 	if err != nil {
 		log.Println("Models.Block.Delete ", err)
 		return errors.New("something wrong")

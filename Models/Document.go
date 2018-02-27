@@ -149,7 +149,7 @@ func (doc *Document) Get(db *sql.DB) error{
 								b.last_updated
 								FROM block b
 								JOIN tree ON tree.id = b.parent_id
-							) SELECT id, parent_id, name, content, ord, last_updated FROM tree ORDER BY path`, doc.ID)
+							) SELECT id, parent_id, name, content, ord, last_updated, path FROM tree ORDER BY path`, doc.ID)
 	if err != nil {
 		log.Println("Models.Document.Get ", err)
 		return errors.New("something wrong")
@@ -160,7 +160,7 @@ func (doc *Document) Get(db *sql.DB) error{
 		var blockContent 	sql.NullString
 
 		block := new(Block)
-		err = rows.Scan(&block.Id, &parentId, &block.Name, &blockContent, &block.Order, &block.LastUpdated)
+		err = rows.Scan(&block.Id, &parentId, &block.Name, &blockContent, &block.Order, &block.LastUpdated, &block.Ltree)
 		if err != nil {
 			log.Println("Models.Document.Get ", err)
 			return errors.New("something wrong")
