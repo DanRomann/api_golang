@@ -60,13 +60,7 @@ func (block *Block) Update(tx *sql.Tx) error{
 	}else {
 		parentId.Int64 = int64(block.ParentID)
 	}
-	_, err := tx.Exec(`UPDATE block SET parent_id = $1,
- 											  name = $2,
- 											  content = $3,
- 											  ord = $4,
- 											  last_updated = $5
- 											  WHERE id = $6`, parentId, block.Name, block.Content,
- 											  block.Order, time.Now(), block.Id)
+	_, err := tx.Exec(`SELECT update_block($1, $2, $3, $4, $5)`, block.Id, block.ParentID, block.Name, block.Content, block.Order)
 	if err != nil {
 		log.Println("Models.Block.Update ", err)
 		return errors.New("something wrong")
@@ -75,7 +69,7 @@ func (block *Block) Update(tx *sql.Tx) error{
 }
 
 func (block *Block) Delete(tx *sql.Tx) error{
-	_, err := tx.Exec(`SELECT delete_block($1, $2, $3)`, block.Id)
+	_, err := tx.Exec(`SELECT delete_block($1, $2, $3)`, block.Id, block.ParentID, block.Order)
 	if err != nil {
 		log.Println("Models.Block.Delete ", err)
 		return errors.New("something wrong")
@@ -84,15 +78,31 @@ func (block *Block) Delete(tx *sql.Tx) error{
 }
 
 func (block *Block) BelongToDocumentAndUser(userId, docId int, db *sql.DB) bool{
-	var name string
-	err := db.QueryRow(`SELECT block.name FROM block
-							  JOIN document ON document.id = block.doc_id
-							  JOIN client ON client.id = document.client_id
-							  WHERE document.id = $1 AND client.id = $2 AND block.id = $3 `,
-							  	docId, userId, block.Id).Scan(&name)
-	if err != nil {
-		log.Println("Models.Block.BelongToDocumentAndUser ", err)
-		return false
+	var err  error
+	var name, parentName string
+	if block.ParentID != 0 {
+		err = db.QueryRow(`SELECT block.name FROM block
+								 JOIN document ON document.id = block.doc_id
+								 JOIN client ON client.id = document.client_id
+								 WHERE document.id = $1
+								 AND client.id = $2
+								 AND block.id = $3`,
+								docId, userId, block.Id).Scan(&name)
+		if err != nil {
+			log.Println("Models.Block.BelongToDocumentAndUser ", err)
+			return false
+		}
+		err = db.QueryRow(`SELECT block.name FROM block
+								 JOIN document ON document.id = block.doc_id
+								 JOIN client ON client.id = document.client_id
+								 WHERE document.id = $1
+								 AND client.id = $2
+								 AND block.id = $3`,
+			docId, userId, block.ParentID).Scan(&name)
+		if err != nil {
+			log.Println("Models.Block.BelongToDocumentAndUser ", err)
+			return false
+		}
 	}
 	return true
 }
