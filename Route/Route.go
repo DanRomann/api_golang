@@ -29,8 +29,12 @@ func Route() *mux.Router {
 	r.HandleFunc("/document", createDoc).Methods("POST")
 	r.HandleFunc("/document/edit", commitDoc).Methods("POST")
 
-	r.HandleFunc("/block/search", searchBlock).Methods("POST")
 	r.HandleFunc("/companies", getCompanies).Methods("GET")
+
+
+	r.HandleFunc("/document/search", searchDoc).Methods("POST")
+	r.HandleFunc("/block/search", searchBlock).Methods("POST")
+
 	r.HandleFunc("/country", CountryList).Methods("GET")
 
 	return r

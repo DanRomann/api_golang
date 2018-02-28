@@ -26,7 +26,7 @@ type Permissions struct {
 }
 
 type CompanyInteraction interface{
-	Get(name *string, db *sql.DB) bool
+	Get(companyId int, db *sql.DB)
 
 	Create(tx *sql.Tx) error
 
@@ -34,7 +34,7 @@ type CompanyInteraction interface{
 
 	GetDocuments(hasPermissions bool, db *sql.DB)
 
-	SendInvite(db *sql.DB) error
+	SendInvite(userId int, db *sql.DB) error
 
 }
 
@@ -69,3 +69,21 @@ func CompanyList(db *sql.DB)([]Company, error){
 	return companies, nil
 
 }
+
+func (company *Company)	Get(userId int, db *sql.DB) error{
+	err := db.QueryRow(`SELECT cm.name, cm.description, c.name  FROM company cm
+								JOIN country c ON cm.country_id = c.id
+								JOIN client_company cc ON cc.client_id = $1
+								WHERE cm.id = $2 AND ((cc.client_confirm = TRUE AND cc.company_confirm = TRUE) OR cm.pub = TRUE);`,
+								userId,	company.Id).Scan(&company.Name, &company.Description, &company.Country)
+	if err != nil {
+		log.Println("Models.Company.Get ", err)
+		return errors.New("something wrong")
+	}
+	return nil
+}
+
+func (company *Company)	SendInvite(userId int, db *sql.DB) error{
+	return nil
+}
+

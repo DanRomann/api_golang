@@ -83,13 +83,12 @@ func (doc *Document) Create(db *sql.DB) error{
 func PublicDocuments(isTemplate bool, db *sql.DB) ([]Document, error){
 	var rows		*sql.Rows
 	var err			error
-	var	description	*sql.NullString
 
 	if isTemplate{
-		rows, err = db.Query(`SELECT id, name, description, template, last_updated, created FROM document WHERE public = TRUE
+		rows, err = db.Query(`SELECT id, name, template, last_updated, created FROM document WHERE public = TRUE
 									AND template = TRUE`)
 	}else {
-		rows, err = db.Query(`SELECT id, name, description, template, last_updated, created FROM document WHERE public = TRUE
+		rows, err = db.Query(`SELECT id, name, template, last_updated, created FROM document WHERE public = TRUE
 									AND template = FALSE`)
 	}
 	if err != nil {
@@ -103,10 +102,7 @@ func PublicDocuments(isTemplate bool, db *sql.DB) ([]Document, error){
 
 	for rows.Next(){
 		doc := new(Document)
-		err = rows.Scan(&doc.ID, &doc.Name, &description, &doc.Template, &doc.LastUpdated, &doc.Created)
-		if description.Valid{
-			doc.Description = description.String
-		}
+		err = rows.Scan(&doc.ID, &doc.Name, &doc.Template, &doc.LastUpdated, &doc.Created)
 		if err != nil{
 			return nil, err
 		}
@@ -123,7 +119,7 @@ func PublicDocuments(isTemplate bool, db *sql.DB) ([]Document, error){
 }
 
 func (doc *Document) Get(db *sql.DB) error{
-	var description *sql.NullString
+	var description sql.NullString
 	rows, err := db.Query(`
 							  WITH RECURSIVE tree AS(
 							  SELECT
@@ -226,4 +222,31 @@ func (doc *Document) SendDocumentToUser(userId int, db *sql.DB) error{
 		return errors.New("something wrong")
 	}
 	return nil
+}
+
+func SearchDocs(query *string, db *sql.DB) ([]Document, error){
+	rows, err := db.Query(`SELECT id, name, template, last_updated, created 
+								  FROM document WHERE lower(name) %> lower($1) AND public = TRUE LIMIT 200 `, query)
+	if err != nil {
+		log.Println("Models.Document.SearchDocs ", err)
+		return nil, errors.New("something wrong")
+	}
+	defer rows.Close()
+
+	docs := make([]Document, 0)
+
+	for rows.Next(){
+		curDoc := Document{}
+		err := rows.Scan(&curDoc.ID, &curDoc.Name, &curDoc.Template, &curDoc.LastUpdated, &curDoc.Created)
+		if err != nil{
+			log.Println("Models.Document.Search ", err)
+			return nil, errors.New("something wrong")
+		}
+		docs = append(docs, curDoc)
+	}
+	if err = rows.Err(); err != nil{
+		log.Println("Search block ", err)
+		return nil, errors.New("something wrong")
+	}
+	return docs, nil
 }

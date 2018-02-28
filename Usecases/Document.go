@@ -175,3 +175,25 @@ func CopyDoc(docId int, token *string, db *sql.DB) error{
 	}
 	return nil
 }
+
+func SearchDocumentsByQuery(query, token *string, db *sql.DB)([]Models.Document, error){
+	_, err := Utils.ParseToken(token)
+	if err != nil {
+		return nil, err
+	}
+
+	if query == nil{
+		return nil, errors.New("empty query string")
+	}
+
+	if len(*query) == 0{
+		return nil, errors.New("empty query string")
+	}
+
+	documents, err := Models.SearchDocs(query, db)
+	if err != nil {
+		return nil, err
+	}
+
+	return documents, err
+}
