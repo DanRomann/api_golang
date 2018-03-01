@@ -121,6 +121,7 @@ func ChangeDoc(newBlock *Models.Block, token *string, db *sql.DB) (*Models.Block
 				tx.Rollback()
 				return nil, err
 			}
+			return nil, nil
 		}
 
 		//Update block
