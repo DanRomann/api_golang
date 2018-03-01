@@ -108,15 +108,16 @@ func (block *Block) BelongToDocumentAndUser(userId, docId int, db *sql.DB) bool{
 }
 
 func (block *Block)	Create(tx *sql.Tx) error{
-	var parentId sql.NullInt64
-	if block.ParentID == 0{
-		parentId.Valid = false
-	}else {
-		parentId.Int64 = int64(block.ParentID)
-	}
-	err := tx.QueryRow(`INSERT INTO block(name, content, last_updated, parent_id, ord, doc_id)
+	var err error
+	if block.ParentID == 0 {
+		err = tx.QueryRow(`INSERT INTO block(name, content, last_updated, parent_id, ord, doc_id)
 							  VALUES ($1, $2, $3, $4, $5, $6) RETURNING id`, block.Name, block.Content, time.Now(),
-							  parentId.Int64, block.Order, block.DocId).Scan(&block.Id)
+			nil, block.Order, block.DocId).Scan(&block.Id)
+	}else {
+		err = tx.QueryRow(`INSERT INTO block(name, content, last_updated, parent_id, ord, doc_id)
+							  VALUES ($1, $2, $3, $4, $5, $6) RETURNING id`, block.Name, block.Content, time.Now(),
+			block.ParentID, block.Order, block.DocId).Scan(&block.Id)
+	}
 	if err != nil {
 		log.Println("Models.Block.Create ", err)
 		return errors.New("something wrong")
