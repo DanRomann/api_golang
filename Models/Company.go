@@ -15,6 +15,7 @@ type Company struct {
 }
 
 type Permissions struct {
+	CompanyId	int	 `json:"company_id"`
 	Read 		bool `json:"read"`
 	Write 		bool `json:"write"`
 	Update 		bool `json:"update"`
@@ -35,6 +36,10 @@ type CompanyInteraction interface{
 	GetDocuments(hasPermissions bool, db *sql.DB)
 
 	SendInvite(userId int, db *sql.DB) error
+
+	PublicOrUserIsMember(userId, db *sql.DB) error
+
+	IsPublic(db *sql.DB) bool
 
 }
 
@@ -86,4 +91,57 @@ func (company *Company)	Get(userId int, db *sql.DB) error{
 func (company *Company)	SendInvite(userId int, db *sql.DB) error{
 	return nil
 }
+
+func (company *Company) UserPermissions(userId int, db *sql.DB) ([]Permissions, error){
+	rows, err := db.Query(`SELECT company_id, gr_admin, gr_invite, gr_kick, gr_read, gr_write, gr_update, gr_delete FROM client_company cc
+								 JOIN company ON company.id = cc.company_id
+								 JOIN client ON client.id = cc.client_id
+								 WHERE client_id = $1`, userId)
+	if err != nil {
+		return nil, nil
+	}
+	defer rows.Close()
+
+	permissions := make([]Permissions, 0)
+	for rows.Next(){
+		curPermission := new(Permissions)
+		err = rows.Scan(&curPermission.CompanyId, &curPermission.Admin, &curPermission.Invite, &curPermission.Kick,
+						&curPermission.Read, &curPermission.Write, &curPermission.Update, &curPermission.Delete)
+		if err != nil {
+			log.Println("Models.Company.UserPermissions ", err)
+			return nil, errors.New("something wrong")
+		}
+
+		permissions = append(permissions, *curPermission)
+	}
+
+	if err = rows.Err(); err != nil{
+		log.Println("Models.Company.UserPermissions ", err)
+		return nil, errors.New("something wrong")
+	}
+
+	return permissions, nil
+}
+
+func (company *Company)	IsPublic(db *sql.DB) bool{
+	var pub	bool
+	err := db.QueryRow(`SELECT pub FROM company WHERE id = $1`, company.Id).Scan(&pub)
+	if err != nil {
+		return false
+	}
+	return pub
+}
+
+func (company *Company) Docs(permissions bool, db *sql.DB)([]Document, error){
+	//var rows *sql.Row
+	//var err	 error
+	//if permissions{
+	//	rows, err = db.Query(`SELECT `)
+	//}
+	return nil, nil
+}
+
+
+
+
 

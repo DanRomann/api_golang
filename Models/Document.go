@@ -10,11 +10,11 @@ import (
 type Document struct {
 	ID          int       `json:"doc_id,omitempty"`
 	UserId		int		  `json:"user_id,omitempty q"`
-	Name        string    `json:"name"`
+	Name        string    `json:"name,omitempty"`
 	Description	string	  `json:"description"`
 	Blocks      []Block   `json:"blocks,omitempty"`
 	Template    bool      `json:"template,omitempty"`
-	Public      bool      `json:"public,omitempty"`
+	Public      bool      `json:"public"`
 	ReadOnly	bool	  `json:"read_only,omitempty"`
 	LastUpdated time.Time `json:"last_updated,omitempty"`
 	Created     time.Time `json:"created,omitempty"`
@@ -44,7 +44,8 @@ type DocumentInteraction interface{
 }
 
 func (doc *Document) BelongToUser(userId int, db *sql.DB) bool{
-	err := db.QueryRow(`SELECT name FROM document WHERE id = $1 AND client_id = $2`, doc.ID, userId).Scan(&doc.Name)
+	var name string
+	err := db.QueryRow(`SELECT name FROM document WHERE id = $1 AND client_id = $2`, doc.ID, userId).Scan(&name)
 	if err != nil {
 		return false
 	}
@@ -157,6 +158,7 @@ func (doc *Document) Get(db *sql.DB) error{
 
 		block := new(Block)
 		err = rows.Scan(&block.Id, &parentId, &block.Name, &blockContent, &block.Order, &block.LastUpdated, &block.Ltree)
+		block.DocId = doc.ID
 		if err != nil {
 			log.Println("Models.Document.Get ", err)
 			return errors.New("something wrong")
@@ -249,4 +251,54 @@ func SearchDocs(query *string, db *sql.DB) ([]Document, error){
 		return nil, errors.New("something wrong")
 	}
 	return docs, nil
+}
+
+
+func (doc *Document) SaveFillTemplate(userId int, tx *sql.Tx) error{
+	dict := make(map[int]int)
+	err := tx.QueryRow(`INSERT INTO document(name, client_id, last_updated, created) VALUES($1, $2, $3, $4)
+ 								RETURNING id`, doc.Name, userId, time.Now(), time.Now()).Scan(&doc.ID)
+	if err != nil {
+		tx.Rollback()
+		log.Println("Modesl.Document.SaveFillTemplate can't insert doc ", err)
+		return errors.New("something wrong")
+	}
+	for _, block := range doc.Blocks{
+		var newId int
+		err := tx.QueryRow(`INSERT INTO block(name, content, date, client_id) VALUES($1, $2, $3, $4) RETURNING id`,
+									block.Name,	block.Content, time.Now(), userId).Scan(&newId)
+		dict[block.Id] = newId
+		if err != nil {
+			tx.Rollback()
+			log.Println("Models.Document.SaveFillTemplate can't insert block ", err)
+			return errors.New("something wrong")
+		}
+	}
+	for _, block := range doc.Blocks{
+		var curParent, curId	int
+		var err 				error
+
+		curParent = dict[block.ParentID]
+		if curParent != 0 {
+			_, err = tx.Exec(`UPDATE block SET parent_id = $1 WHERE id = $2`, curParent, curId)
+		}
+
+		if err != nil {
+			log.Printf("%+v\n", block)
+			tx.Rollback()
+			log.Println("Model.Document.SaveFillTemplate can't insert doc_block ", err)
+			return errors.New("something wrong")
+		}
+	}
+	return nil
+}
+
+func (doc *Document) Edit(db *sql.DB) error{
+	_, err := db.Exec(`UPDATE document SET name = $1, description = $2, public = $3, last_updated = $4
+							 WHERE id = $5`, doc.Name, doc.Description, doc.Public, time.Now(), doc.ID)
+	if err != nil {
+		log.Println("Models.Document.Edit ", err)
+		return errors.New("something wrong")
+	}
+	return nil
 }

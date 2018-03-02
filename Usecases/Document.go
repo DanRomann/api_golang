@@ -47,7 +47,69 @@ func GetPublicDocuments(isTemplate bool, db *sql.DB) ([]Models.Document, error){
 }
 
 func CopyDocument(docId int, token *string, db *sql.DB) error{
-	//userId, _ := Utils.ParseToken(token)
+	userId, err := Utils.ParseToken(token)
+	if err != nil {
+		return err
+	}
+
+	tx, err := db.Begin()
+	if err != nil {
+		return errors.New("something wrong")
+	}
+
+	document := new(Models.Document)
+	document.ID = docId
+
+	if !document.BelongToUserOrPublic(userId, db){
+		return errors.New("access denied")
+	}
+
+	err = document.Copy(userId, tx)
+	if err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	err = tx.Commit()
+	if err != nil {
+		log.Println("Usecases.Document.CopyDocument, ", err)
+		return errors.New("something wrong")
+	}
+	return nil
+}
+
+func FillTemplate(doc *Models.Document, token *string, db *sql.DB) error{
+	userId, err := Utils.ParseToken(token)
+	if err != nil {
+		return err
+	}
+
+	if userId == 0{
+		return errors.New("access denied")
+	}
+
+	if len(doc.Blocks) == 0{
+		return errors.New("empty blocks")
+	}
+
+	tx, err := db.Begin()
+	if err != nil {
+		log.Println("Usecases.Document.FillTemplate ", err)
+		return errors.New("something wrong")
+	}
+
+
+	err = doc.SaveFillTemplate(userId, tx)
+	if err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	err = tx.Commit()
+	if err != nil {
+		log.Println("Usecases.Document.FillTemplate ", err)
+		return errors.New("something wrong")
+	}
 	return nil
 }
 
@@ -121,6 +183,11 @@ func ChangeDoc(newBlock *Models.Block, token *string, db *sql.DB) (*Models.Block
 				tx.Rollback()
 				return nil, err
 			}
+			err = tx.Commit()
+			if err != nil {
+				log.Println("Usecases.Document.ChangeDoc, ", err)
+				return nil, errors.New("something wrong")
+			}
 			return nil, nil
 		}
 
@@ -129,6 +196,11 @@ func ChangeDoc(newBlock *Models.Block, token *string, db *sql.DB) (*Models.Block
 		if err != nil {
 			tx.Rollback()
 			return nil, err
+		}
+		err = tx.Commit()
+		if err != nil {
+			log.Println("Usecases.Document.ChangeDoc, ", err)
+			return nil, errors.New("something wrong")
 		}
 		return newBlock, nil
 
@@ -155,29 +227,6 @@ func ChangeDoc(newBlock *Models.Block, token *string, db *sql.DB) (*Models.Block
 	return newBlock, nil
 }
 
-func CopyDoc(docId int, token *string, db *sql.DB) error{
-	userId, err := Utils.ParseToken(token)
-	if err != nil {
-		return err
-	}
-
-	document := new(Models.Document)
-	document.ID = docId
-
-	tx, err := db.Begin()
-	if err != nil {
-		log.Println("Usecases.Document.CopyDoc ", err)
-		return errors.New("something wrong")
-	}
-
-	err = document.Copy(userId, tx)
-	if err != nil {
-		tx.Rollback()
-		return err
-	}
-	return nil
-}
-
 func SearchDocumentsByQuery(query, token *string, db *sql.DB)([]Models.Document, error){
 	_, err := Utils.ParseToken(token)
 	if err != nil {
@@ -198,4 +247,21 @@ func SearchDocumentsByQuery(query, token *string, db *sql.DB)([]Models.Document,
 	}
 
 	return documents, err
+}
+
+func DocMetaEdit(doc *Models.Document, token *string, db *sql.DB) error{
+	userId, err := Utils.ParseToken(token)
+	if err != nil {
+		return err
+	}
+
+	if !doc.BelongToUser(userId, db){
+		return errors.New("access denied")
+	}
+
+	err = doc.Edit(db)
+	if err != nil {
+		return err
+	}
+	return nil
 }

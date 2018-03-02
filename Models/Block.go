@@ -54,13 +54,12 @@ func (block *Block) Get(db *sql.DB) error{
 }
 
 func (block *Block) Update(tx *sql.Tx) error{
-	var parentId sql.NullInt64
-	if block.ParentID == 0{
-		parentId.Valid = false
+	var err error
+	if block.ParentID == 0 {
+		_, err = tx.Exec(`SELECT update_block($1, $2, $3, $4, $5)`, block.Id, nil, block.Name, block.Content, block.Order)
 	}else {
-		parentId.Int64 = int64(block.ParentID)
+		_, err = tx.Exec(`SELECT update_block($1, $2, $3, $4, $5)`, block.Id, block.ParentID, block.Name, block.Content, block.Order)
 	}
-	_, err := tx.Exec(`SELECT update_block($1, $2, $3, $4, $5)`, block.Id, block.ParentID, block.Name, block.Content, block.Order)
 	if err != nil {
 		log.Println("Models.Block.Update ", err)
 		return errors.New("something wrong")

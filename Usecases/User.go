@@ -247,13 +247,70 @@ func SendDocumentToUser(docId, userId int, token *string, db *sql.DB) error{
 		return err
 	}
 
+	if userId == 0{
+		return errors.New("access denied")
+	}
+
 	document := new(Models.Document)
 	document.ID = docId
+
+	if !document.BelongToUserOrPublic(userId, db){
+		return errors.New("access denied")
+	}
 
 	err = document.SendDocumentToUser(userId, db)
 	if err != nil {
 		return err
 	}
 
+	return nil
+}
+
+func AcceptDoc(docId int, token *string, db *sql.DB) error{
+	var allowed bool
+	userId, err := Utils.ParseToken(token)
+	if err != nil {
+		return err
+	}
+
+	if userId == 0{
+		return errors.New("access denied")
+	}
+
+	user := new(Models.User)
+	user.ID = userId
+
+	inboxDoc, err := user.InboxDocuments(db)
+	if err != nil {
+		return err
+	}
+
+	for _, doc := range inboxDoc{
+		if doc.ID == docId{
+			allowed = true
+		}
+	}
+
+	if !allowed{
+		return errors.New("access denied")
+	}
+
+	tx, err := db.Begin()
+	if err != nil {
+		log.Println("Usecases.User.AcceptDoc ", err)
+		return errors.New("something wrong")
+	}
+
+	err = user.AcceptDoc(docId, tx)
+	if err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	err = tx.Commit()
+	if err != nil {
+		log.Println("Usecases.User.AcceptDoc ", err)
+		return errors.New("something wrong")
+	}
 	return nil
 }

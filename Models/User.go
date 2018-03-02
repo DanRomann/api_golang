@@ -370,13 +370,13 @@ func (user *User) CheckPassword(db *sql.DB) bool{
 	return false
 }
 
-func (user *User) AcceptDoc(docId, db sql.DB) error{
-	_, err := db.Exec("SELECT * FROM copy_doc($1, $2)", docId, user.ID)
+func (user *User) AcceptDoc(docId int, tx *sql.Tx) error{
+	_, err := tx.Exec("SELECT * FROM copy_doc($1, $2)", docId, user.ID)
 	if err != nil{
 		log.Println("Model.User.AcceptDoc ", err)
 		return errors.New("something wrong")
 	}
-	_, err = db.Exec("DELETE FROM recieve_document WHERE client_id = $2 AND document = $1", docId, user.ID)
+	_, err = tx.Exec("DELETE FROM recieve_document WHERE client_id = $2 AND document = $1", docId, user.ID)
 	if err != nil{
 		log.Println("Model.User.AcceptDoc ", err)
 		return errors.New("something wrong")
@@ -468,5 +468,4 @@ func (user *User) HasPermissionToBlock(blockId int, db *sql.DB) bool{
 		return false
 	}
 	return true
-
 }

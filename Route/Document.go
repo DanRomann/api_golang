@@ -10,7 +10,6 @@ import (
 	"errors"
 	"io/ioutil"
 	"docnota/Models"
-	"log"
 )
 
 func getPublicDocs(w http.ResponseWriter, r *http.Request){
@@ -111,7 +110,6 @@ func commitDoc(w http.ResponseWriter, r *http.Request){
 		return
 	}
 
-	log.Printf("%+v\n", block)
 
 	block, err = Usecases.ChangeDoc(block, &token, Utils.Connect)
 	if err != nil {
@@ -121,4 +119,57 @@ func commitDoc(w http.ResponseWriter, r *http.Request){
 
 	result, _ := json.Marshal(block)
 	DataResponse(result, w)
+}
+
+func fillTemplate(w http.ResponseWriter, r *http.Request){
+	token := r.Header.Get("Authorization")
+
+	data, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		ErrResponse(errors.New("bad data"), w)
+		return
+	}
+	defer r.Body.Close()
+
+	doc := new(Models.Document)
+	err = json.Unmarshal(data, &doc)
+	if err != nil {
+		ErrResponse(errors.New("bad json"), w)
+		return
+	}
+
+	err = Usecases.FillTemplate(doc, &token, Utils.Connect)
+	if err != nil {
+		ErrResponse(err, w)
+		return
+	}
+
+	SuccessResponse("ok", w)
+}
+
+func metaEdit(w http.ResponseWriter, r *http.Request){
+	token := r.Header.Get("Authorization")
+
+	data, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		ErrResponse(errors.New("bad data"), w)
+		return
+	}
+	defer r.Body.Close()
+
+	doc := new(Models.Document)
+	err = json.Unmarshal(data, &doc)
+	if err != nil {
+		ErrResponse(errors.New("bad json"), w)
+		return
+	}
+
+
+	err = Usecases.DocMetaEdit(doc, &token, Utils.Connect)
+	if err != nil {
+		ErrResponse(err, w)
+		return
+	}
+
+	SuccessResponse("ok", w)
 }

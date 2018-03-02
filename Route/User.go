@@ -195,5 +195,24 @@ func sendDocToUser(w http.ResponseWriter, r *http.Request){
 	}
 
 	SuccessResponse("ok", w)
+}
+
+func acceptDoc(w http.ResponseWriter, r *http.Request){
+	token := r.Header.Get("Authorization")
+	vars := mux.Vars(r)
+
+	docId, err := strconv.Atoi(vars["docId"])
+	if err != nil {
+		ErrResponse(errors.New("bad docId"), w)
+		return
+	}
+
+	err = Usecases.AcceptDoc(docId, &token, Utils.Connect)
+	if err != nil {
+		ErrResponse(err, w)
+		return
+	}
+
+	SuccessResponse("ok", w)
 
 }

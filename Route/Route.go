@@ -19,6 +19,7 @@ func Route() *mux.Router {
 	r.HandleFunc("/user/{userId}/templates", getUserTemplate).Methods("GET")
 	r.HandleFunc("/user/{userId}/inbox", getUserInbox).Methods("GET")
 	r.HandleFunc("/user/send_doc", sendDocToUser).Methods("POST")
+	r.HandleFunc("/user/accept_doc/{docId}", acceptDoc).Methods("POST")
 
 
 
@@ -27,9 +28,13 @@ func Route() *mux.Router {
 	r.HandleFunc("/document/{docId}", getDoc).Methods("GET")
 	r.HandleFunc("/document/{docId}/copy", copyDoc).Methods("POST")
 	r.HandleFunc("/document", createDoc).Methods("POST")
+	r.HandleFunc("/document/fillTemplate", fillTemplate).Methods("POST")
 	r.HandleFunc("/document/edit", commitDoc).Methods("POST")
+	r.HandleFunc("/document/meta/edit", metaEdit).Methods("POST")
 
 	r.HandleFunc("/companies", getCompanies).Methods("GET")
+	r.HandleFunc("/company/{companyId}", getCompany).Methods("GET")
+	r.HandleFunc("/company/{companyId}/doc", companyDoc).Methods("GET")
 
 
 	r.HandleFunc("/document/search", searchDoc).Methods("POST")

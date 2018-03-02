@@ -21,6 +21,7 @@ func ErrResponse(err error, w http.ResponseWriter){
 	curResponse.Error = err.Error()
 	result, _ := json.Marshal(curResponse)
 	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set("Access-Control-Allow-Origin", "*")
 	w.WriteHeader(http.StatusOK)
 	w.Write(result)
 }
@@ -32,12 +33,14 @@ func SuccessResponse(result string, w http.ResponseWriter){
 	curResponse.Result = result
 	response, _ := json.Marshal(curResponse)
 	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set("Access-Control-Allow-Origin", "*")
 	w.WriteHeader(http.StatusOK)
 	w.Write(response)
 }
 
 func DataResponse(result []byte, w http.ResponseWriter){
 	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set("Access-Control-Allow-Origin", "*")
 	w.WriteHeader(http.StatusOK)
 	w.Write(result)
 }

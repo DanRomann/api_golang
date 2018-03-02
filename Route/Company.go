@@ -39,3 +39,14 @@ func getCompany(w http.ResponseWriter, r *http.Request){
 	result, _ := json.Marshal(company)
 	DataResponse(result, w)
 }
+
+func companyDoc(w http.ResponseWriter, r *http.Request){
+	//token := r.Header.Get("Authorization")
+	//vars := mux.Vars(r)
+	//companyId, err := strconv.Atoi(vars["companyId"])
+	//if err != nil {
+	//	ErrResponse(errors.New("bad company id"), w)
+	//	return
+	//}
+
+}
