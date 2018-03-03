@@ -50,9 +50,10 @@ func GetCompany(companyId int, token *string, db *sql.DB) (*Models.Company, erro
 	return company, nil
 }
 
-//ToDo
+
 func GetCompanyDoc(companyId int, token *string, db *sql.DB) ([]Models.Document, error){
-	var allowed bool
+	var hasPermissions bool
+
 	userId, err := Utils.ParseToken(token)
 	if err != nil {
 		return nil, err
@@ -65,6 +66,7 @@ func GetCompanyDoc(companyId int, token *string, db *sql.DB) ([]Models.Document,
 	if err != nil {
 		return nil, err
 	}
+
 	if len(permissions) == 0{
 		if !company.IsPublic(db){
 			return nil, errors.New("access denied")
@@ -72,12 +74,35 @@ func GetCompanyDoc(companyId int, token *string, db *sql.DB) ([]Models.Document,
 	}else {
 		for _, curPerm := range permissions{
 			if curPerm.CompanyId == companyId{
-				allowed = curPerm.Read
-				if allowed{}
+				hasPermissions = curPerm.Read
 			}
 		}
 	}
 
+	documents, err := company.Docs(hasPermissions, db)
+	if err != nil {
+		return nil, err
+	}
 
-	return nil, nil
+	return documents, nil
+}
+
+func SearchCompanyByQuery(query *string, token *string, db *sql.DB) ([]Models.Company, error){
+	userId, err := Utils.ParseToken(token)
+	if err != nil {
+		return nil, err
+	}
+
+	if len(*query) == 0{
+		return nil, errors.New("empty query")
+	}
+
+	companies, err := Models.SearchCompany(query, userId, db)
+	if err != nil {
+		return nil, err
+	}
+
+	return companies, nil
+
+
 }

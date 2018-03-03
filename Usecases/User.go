@@ -144,14 +144,13 @@ func GetUser(requestUser int, token *string, db *sql.DB) (*Models.User, error){
 	return user, nil
 }
 
-func GetUsers(db *sql.DB) ([]byte, error){
+func GetUsers(db *sql.DB) ([]Models.User, error){
 	users, err := Models.GetUsers(db)
 	if err != nil {
 		return nil, err
 	}
 
-	result, _ := json.Marshal(users)
-	return result, nil
+	return users, nil
 }
 
 func Auth(user *Models.User, db *sql.DB) (*string, error){

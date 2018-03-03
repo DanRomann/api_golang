@@ -161,7 +161,6 @@ func SearchBlock(query *string, db *sql.DB) ([]Block, error){
 		return nil, err
 	}
 	defer rows.Close()
-
 	blocks := make([]Block, 0)
 	for rows.Next(){
 		curBlock := Block{}

@@ -151,6 +151,7 @@ func (doc *Document) Get(db *sql.DB) error{
 		log.Println("Models.Document.Get ", err)
 		return errors.New("something wrong")
 	}
+	defer rows.Close()
 	blocks := make([]Block, 0)
 	for rows.Next() {
 		var parentId 		sql.NullInt64
@@ -190,7 +191,6 @@ func (doc *Document) Get(db *sql.DB) error{
 		log.Println("Models.Document.Get ", err)
 		return errors.New("something wrong")
 	}
-	defer rows.Close()
 	return nil
 }
 
@@ -218,7 +218,7 @@ func (doc *Document) Copy(userId int, tx *sql.Tx) error{
 }
 
 func (doc *Document) SendDocumentToUser(userId int, db *sql.DB) error{
-	_, err := db.Exec("INSERT INTO recieve_document (client_id, document_id) VALUES ($1, $2)", userId, doc.ID)
+	_, err := db.Exec("INSERT INTO receive_document (client_id, document_id) VALUES ($1, $2)", userId, doc.ID)
 	if err != nil{
 		log.Println("Models.Document.SendDocumentToUser ", err)
 		return errors.New("something wrong")

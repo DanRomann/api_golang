@@ -41,12 +41,22 @@ func getCompany(w http.ResponseWriter, r *http.Request){
 }
 
 func companyDoc(w http.ResponseWriter, r *http.Request){
-	//token := r.Header.Get("Authorization")
-	//vars := mux.Vars(r)
-	//companyId, err := strconv.Atoi(vars["companyId"])
-	//if err != nil {
-	//	ErrResponse(errors.New("bad company id"), w)
-	//	return
-	//}
+	token := r.Header.Get("Authorization")
+	vars := mux.Vars(r)
+	companyId, err := strconv.Atoi(vars["companyId"])
+	if err != nil {
+		ErrResponse(errors.New("bad company id"), w)
+		return
+	}
+
+	documents, err := Usecases.GetCompanyDoc(companyId, &token, Utils.Connect)
+	if err != nil {
+		ErrResponse(err, w)
+		return
+	}
+
+	result, _ := json.Marshal(documents)
+
+	DataResponse(result, w)
 
 }

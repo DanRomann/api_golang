@@ -376,7 +376,7 @@ func (user *User) AcceptDoc(docId int, tx *sql.Tx) error{
 		log.Println("Model.User.AcceptDoc ", err)
 		return errors.New("something wrong")
 	}
-	_, err = tx.Exec("DELETE FROM recieve_document WHERE client_id = $2 AND document = $1", docId, user.ID)
+	_, err = tx.Exec("DELETE FROM receive_document WHERE client_id = $2 AND document_id = $1", docId, user.ID)
 	if err != nil{
 		log.Println("Model.User.AcceptDoc ", err)
 		return errors.New("something wrong")

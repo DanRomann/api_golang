@@ -11,6 +11,7 @@ func Route() *mux.Router {
 	r := mux.NewRouter()
 
 
+	r.HandleFunc("/user/list", getUsers).Methods("GET")
 	r.HandleFunc("/user/{userId}", getUser).Methods("GET")
 	r.HandleFunc("/user", createUser).Methods("POST")
 	r.HandleFunc("/user/confirm", confirmUser).Methods("POST")
@@ -39,6 +40,7 @@ func Route() *mux.Router {
 
 	r.HandleFunc("/document/search", searchDoc).Methods("POST")
 	r.HandleFunc("/block/search", searchBlock).Methods("POST")
+	r.HandleFunc("/company/search", searchCompany).Methods("POST")
 
 	r.HandleFunc("/country", CountryList).Methods("GET")
 

@@ -133,12 +133,74 @@ func (company *Company)	IsPublic(db *sql.DB) bool{
 }
 
 func (company *Company) Docs(permissions bool, db *sql.DB)([]Document, error){
-	//var rows *sql.Row
-	//var err	 error
-	//if permissions{
-	//	rows, err = db.Query(`SELECT `)
-	//}
-	return nil, nil
+	var rows *sql.Rows
+	var err	 error
+
+	if permissions{
+		rows, err = db.Query(`SELECT id, name, description FROM document
+									JOIN company_doc cd ON document.id = cd.doc_id
+									WHERE cd.company_id = $1`, company.Id)
+	}else {
+		rows, err = db.Query(`SELECT id, name, description FROM document
+									JOIN company_doc cd ON document.id = cd.doc_id
+									WHERE cd.company_id = $1 AND public = TRUE`, company.Id)
+	}
+	if err != nil {
+		return nil, errors.New("no docs")
+	}
+
+	defer rows.Close()
+
+	documents := make([]Document, 0)
+	for rows.Next(){
+		doc := new(Document)
+		err = rows.Scan(&doc.ID, &doc.Name, &doc.Description)
+		if err != nil {
+			log.Println("Models.Company.Docs ", err)
+			return nil, err
+		}
+
+		documents = append(documents, *doc)
+	}
+
+	if err = rows.Err(); err != nil{
+		log.Println("Models.Company.Docs ", err)
+		return nil, err
+	}
+	return documents, nil
+}
+
+func SearchCompany(query *string, userId int, db *sql.DB) ([]Company, error){
+	rows, err := db.Query(`SELECT id, name, description FROM company
+							 	 	WHERE pub = TRUE AND lower(name) %> lower($1)
+								 UNION DISTINCT
+								 SELECT id, name, description FROM company
+  									JOIN client_company cc ON cc.company_id = company.id
+									WHERE cc.client_id = $2 AND lower(name) %> lower($1)`, query, userId)
+	if err != nil {
+		log.Println("Models.Company.SearchCompany", err)
+		return nil, err
+	}
+
+	defer rows.Close()
+
+	companies := make([]Company, 0)
+	for rows.Next(){
+		company := new(Company)
+		err := rows.Scan(&company.Id, &company.Name, &company.Description)
+		if err != nil {
+			log.Println("Models.Company.SearchCompany", err)
+			return nil, err
+		}
+		companies = append(companies, *company)
+	}
+
+	if err = rows.Err(); err != nil{
+		log.Println("Models.Company.SearchCompany", err)
+		return nil, err
+	}
+
+	return companies, nil
 }
 
 

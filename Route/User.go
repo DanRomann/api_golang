@@ -148,6 +148,18 @@ func getUser(w http.ResponseWriter, r *http.Request){
 	DataResponse(result, w)
 }
 
+func getUsers(w http.ResponseWriter, r *http.Request){
+	users, err := Usecases.GetUsers(Utils.Connect)
+	if err != nil {
+		ErrResponse(err, w)
+		return
+	}
+
+	result, _ := json.Marshal(users)
+	DataResponse(result, w)
+
+}
+
 func getUserInbox(w http.ResponseWriter, r *http.Request){
 	token := r.Header.Get("Authorization")
 	vars := mux.Vars(r)
