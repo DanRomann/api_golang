@@ -36,11 +36,13 @@ func Route() *mux.Router {
 	r.HandleFunc("/companies", getCompanies).Methods("GET")
 	r.HandleFunc("/company/{companyId}", getCompany).Methods("GET")
 	r.HandleFunc("/company/{companyId}/doc", companyDoc).Methods("GET")
+	r.HandleFunc("/company/meta_for_create/{countryId}", getMetaForCreate).Methods("GET")
 
 
 	r.HandleFunc("/document/search", searchDoc).Methods("POST")
 	r.HandleFunc("/block/search", searchBlock).Methods("POST")
 	r.HandleFunc("/company/search", searchCompany).Methods("POST")
+	r.HandleFunc("/user/search", searchUser).Methods("POST")
 
 	r.HandleFunc("/country", CountryList).Methods("GET")
 

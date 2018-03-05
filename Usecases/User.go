@@ -313,3 +313,21 @@ func AcceptDoc(docId int, token *string, db *sql.DB) error{
 	}
 	return nil
 }
+
+func SearchUserByQuery(query *string, token *string, db *sql.DB)([]Models.User, error){
+	_, err := Utils.ParseToken(token)
+	if err != nil {
+		return nil, err
+	}
+
+	if len(*query) == 0{
+		return nil, errors.New("empty query")
+	}
+
+	users, err := Models.SearchUsers(*query, db)
+	if err != nil {
+		return nil, err
+	}
+
+	return users, nil
+}

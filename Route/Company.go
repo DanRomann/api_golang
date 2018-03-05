@@ -58,5 +58,31 @@ func companyDoc(w http.ResponseWriter, r *http.Request){
 	result, _ := json.Marshal(documents)
 
 	DataResponse(result, w)
+}
 
+func getMetaForCreate(w http.ResponseWriter, r *http.Request){
+	var currResponse struct{
+		Result	*json.RawMessage	`json:"result"`
+	}
+	token := r.Header.Get("Authorization")
+
+	vars := mux.Vars(r)
+
+	countryId, err := strconv.Atoi(vars["countryId"])
+	if err != nil {
+		ErrResponse(errors.New("bad country id"), w)
+		return
+	}
+
+	meta, err := Usecases.GetCompanyMetaByCountry(countryId, &token, Utils.Connect)
+	if err != nil {
+		ErrResponse(err, w)
+		return
+	}
+
+	currResponse.Result = meta
+	result, err := json.Marshal(currResponse)
+
+	//SuccessResponse(*meta, w)
+	DataResponse(result, w)
 }

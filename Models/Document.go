@@ -13,7 +13,7 @@ type Document struct {
 	Name        string    `json:"name,omitempty"`
 	Description	string	  `json:"description"`
 	Blocks      []Block   `json:"blocks,omitempty"`
-	Template    bool      `json:"template,omitempty"`
+	Template    bool      `json:"template"`
 	Public      bool      `json:"public"`
 	ReadOnly	bool	  `json:"read_only,omitempty"`
 	LastUpdated time.Time `json:"last_updated,omitempty"`
@@ -180,8 +180,8 @@ func (doc *Document) Get(db *sql.DB) error{
 		return errors.New("something wrong")
 	}
 
-	err = db.QueryRow(`SELECT name, description, template, last_updated, created FROM document WHERE id = $1`, doc.ID).Scan(&doc.Name,
-													&description, &doc.Template, &doc.LastUpdated, &doc.Created)
+	err = db.QueryRow(`SELECT name, description, template, last_updated, created, public FROM document WHERE id = $1`,
+							doc.ID).Scan(&doc.Name, &description, &doc.Template, &doc.LastUpdated, &doc.Created, &doc.Public)
 	if description.Valid{
 		doc.Description = description.String
 	}
@@ -294,8 +294,8 @@ func (doc *Document) SaveFillTemplate(userId int, tx *sql.Tx) error{
 }
 
 func (doc *Document) Edit(db *sql.DB) error{
-	_, err := db.Exec(`UPDATE document SET name = $1, description = $2, public = $3, last_updated = $4
-							 WHERE id = $5`, doc.Name, doc.Description, doc.Public, time.Now(), doc.ID)
+	_, err := db.Exec(`UPDATE document SET name = $1, description = $2, public = $3, last_updated = $4, template = $5
+							 WHERE id = $6`, doc.Name, doc.Description, doc.Public, time.Now(), doc.Template, doc.ID)
 	if err != nil {
 		log.Println("Models.Document.Edit ", err)
 		return errors.New("something wrong")

@@ -305,8 +305,9 @@ func (user *User) UpdatePassword(passw string, db *sql.DB) error{
 }
 
 func SearchUsers(query string, db *sql.DB) ([]User, error){
-	rows, err := db.Query(" SELECT * FROM client WHERE client.first_name || client.last_name || client.email %> " +
-								" $1 AND pub = TRUE", query)
+	rows, err := db.Query(` SELECT id, first_name, last_name, email
+  								  FROM client WHERE lower(client.first_name || client.last_name || client.email) %> 
+								  lower($1) AND pub = TRUE`, query)
 	if err != nil {
 		log.Println("Model.User.Search ", err)
 		return nil, errors.New("something wrong")
@@ -316,7 +317,7 @@ func SearchUsers(query string, db *sql.DB) ([]User, error){
 	users := make([]User, 0)
 	for rows.Next(){
 		var tmpUser User
-		err := rows.Scan(&tmpUser.ID, &tmpUser.FirstName, &tmpUser.LastName)
+		err := rows.Scan(&tmpUser.ID, &tmpUser.FirstName, &tmpUser.LastName, &tmpUser.Email)
 		if err != nil {
 			log.Println("Model.User.Search ", err)
 			return nil, errors.New("something wrong")		}
@@ -385,6 +386,7 @@ func (user *User) AcceptDoc(docId int, tx *sql.Tx) error{
 }
 
 func (user *User) InboxDocuments(db *sql.DB) ([]Document, error){
+	var description *sql.NullString
 	rows, err := db.Query(`SELECT id, name, rd.client_id, public, template, last_updated, created, description
 								 FROM document JOIN receive_document rd ON document.id = rd.document_id
 								 WHERE rd.client_id = $1`, user.ID)
@@ -395,7 +397,10 @@ func (user *User) InboxDocuments(db *sql.DB) ([]Document, error){
 	docs := make([]Document, 0)
 	for rows.Next(){
 		doc := new(Document)
-		err = rows.Scan(&doc.ID, &doc.Name, &doc.UserId, &doc.Public, &doc.Template, &doc.LastUpdated, &doc.Created, &doc.Description)
+		err = rows.Scan(&doc.ID, &doc.Name, &doc.UserId, &doc.Public, &doc.Template, &doc.LastUpdated, &doc.Created, &description)
+		if description.Valid{
+			doc.Description = description.String
+		}
 		if err != nil {
 			log.Println("Model.User.GetInboxDocument ", err)
 			return nil, errors.New("something wrong")

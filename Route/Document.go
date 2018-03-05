@@ -164,7 +164,6 @@ func metaEdit(w http.ResponseWriter, r *http.Request){
 		return
 	}
 
-
 	err = Usecases.DocMetaEdit(doc, &token, Utils.Connect)
 	if err != nil {
 		ErrResponse(err, w)

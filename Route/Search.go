@@ -106,3 +106,33 @@ func searchCompany(w http.ResponseWriter, r *http.Request){
 	result, _ := json.Marshal(companies)
 	DataResponse(result, w)
 }
+
+func searchUser(w http.ResponseWriter, r *http.Request){
+	token := r.Header.Get("Authorization")
+
+	curQuery := new(SearchQuery)
+
+	data, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		ErrResponse(errors.New("bad data"), w)
+		return
+	}
+
+	defer r.Body.Close()
+
+	err = json.Unmarshal(data, &curQuery)
+	if err != nil {
+		ErrResponse(errors.New("bad json"), w)
+		return
+	}
+
+	companies, err := Usecases.SearchUserByQuery(&curQuery.Query, &token, Utils.Connect)
+	if err != nil {
+		ErrResponse(err, w)
+		return
+	}
+
+	result, _ := json.Marshal(companies)
+	DataResponse(result, w)
+}
+

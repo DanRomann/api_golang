@@ -5,6 +5,7 @@ import (
 	"docnota/Models"
 	"docnota/Utils"
 	"errors"
+	"encoding/json"
 )
 
 func GetCompanyList(db *sql.DB)([]Models.Company, error){
@@ -103,6 +104,22 @@ func SearchCompanyByQuery(query *string, token *string, db *sql.DB) ([]Models.Co
 	}
 
 	return companies, nil
+}
 
+func GetCompanyMetaByCountry(countryId int, token *string, db *sql.DB)(*json.RawMessage, error){
+	userId, err := Utils.ParseToken(token)
+	if err != nil {
+		return nil, err
+	}
 
+	if userId == 0{
+		return nil, errors.New("access denied")
+	}
+
+	meta, err := Models.GetCountryMeta(countryId, db)
+	if err != nil {
+		return nil, err
+	}
+
+	return meta, nil
 }
