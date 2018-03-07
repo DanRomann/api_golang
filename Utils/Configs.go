@@ -12,6 +12,7 @@ type ServerConf struct{
 	StaticDir		string			`json:"static_dir"`
 	WriteTimeout	time.Duration	`json:"write_timeout"`
 	ReadTimeout		time.Duration	`json:"read_timeout"`
+	Address			string			`json:"address"`
 }
 
 type DBConf struct{

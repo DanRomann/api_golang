@@ -60,10 +60,46 @@ func companyDoc(w http.ResponseWriter, r *http.Request){
 	DataResponse(result, w)
 }
 
-func getMetaForCreate(w http.ResponseWriter, r *http.Request){
-	var currResponse struct{
-		Result	*json.RawMessage	`json:"result"`
+func createCompany(w http.ResponseWriter, r *http.Request){
+	token := r.Header.Get("Authorization")
+
+	decoder := json.NewDecoder(r.Body)
+	defer r.Body.Close()
+
+
+	var curRequest map[string]interface{}
+	err := decoder.Decode(&curRequest)
+	if err != nil {
+		ErrResponse(errors.New("bad data"), w)
+		return
 	}
+
+	err = Usecases.CreateCompany(curRequest, &token, Utils.Connect)
+	if err != nil {
+		ErrResponse(err, w)
+		return
+	}
+	SuccessResponse("ok", w)
+}
+
+func confirmCompany(w http.ResponseWriter, r *http.Request){
+	vars := mux.Vars(r)
+	sha, ok := vars["sha"]
+	if !ok{
+		ErrResponse(errors.New("bad sha"), w)
+		return
+	}
+
+	err := Usecases.ConfirmCompany(&sha, Utils.Connect)
+	if err != nil {
+		ErrResponse(err, w)
+		return
+	}
+
+	SuccessResponse("ok", w)
+}
+
+func getMetaForCreate(w http.ResponseWriter, r *http.Request){
 	token := r.Header.Get("Authorization")
 
 	vars := mux.Vars(r)
@@ -80,9 +116,10 @@ func getMetaForCreate(w http.ResponseWriter, r *http.Request){
 		return
 	}
 
-	currResponse.Result = meta
-	result, err := json.Marshal(currResponse)
+	result, err := json.Marshal(meta)
 
-	//SuccessResponse(*meta, w)
-	DataResponse(result, w)
+	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+	w.WriteHeader(http.StatusOK)
+	w.Write(result)
 }

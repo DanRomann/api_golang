@@ -386,7 +386,7 @@ func (user *User) AcceptDoc(docId int, tx *sql.Tx) error{
 }
 
 func (user *User) InboxDocuments(db *sql.DB) ([]Document, error){
-	var description *sql.NullString
+	var description sql.NullString
 	rows, err := db.Query(`SELECT id, name, rd.client_id, public, template, last_updated, created, description
 								 FROM document JOIN receive_document rd ON document.id = rd.document_id
 								 WHERE rd.client_id = $1`, user.ID)

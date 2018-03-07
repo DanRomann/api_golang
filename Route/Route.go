@@ -36,6 +36,8 @@ func Route() *mux.Router {
 	r.HandleFunc("/companies", getCompanies).Methods("GET")
 	r.HandleFunc("/company/{companyId}", getCompany).Methods("GET")
 	r.HandleFunc("/company/{companyId}/doc", companyDoc).Methods("GET")
+	r.HandleFunc("/company", createCompany).Methods("POST")
+	r.HandleFunc("/company/confirm/{sha}", confirmCompany).Methods("GET")
 	r.HandleFunc("/company/meta_for_create/{countryId}", getMetaForCreate).Methods("GET")
 
 

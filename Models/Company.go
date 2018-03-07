@@ -5,14 +5,18 @@ import (
 	"log"
 	"errors"
 	"encoding/json"
+	"crypto/sha256"
+	"time"
+	"encoding/base64"
 )
 
 type Company struct {
-	Id 					int 		`json:"id,omitempty"`
-	Name 				string 		`json:"name,omitempty"`
-	Description			string  	`json:"description,omitempty"`
-	Public				bool		`json:"public,omitempty"`
-	Country				string		`json:"country,omitempty"`
+	Id 					int 				`json:"id,omitempty"`
+	Name 				string 				`json:"name,omitempty"`
+	Description			string  			`json:"description,omitempty"`
+	Public				bool				`json:"public,omitempty"`
+	Country				string				`json:"country,omitempty"`
+	Meta				*json.RawMessage	`json:"meta"`
 }
 
 type Permissions struct {
@@ -212,6 +216,39 @@ func GetCountryMeta(countryId int, db *sql.DB)(*json.RawMessage, error){
 		return nil, errors.New("something wrong")
 	}
 	return result, nil
+}
+
+func PrepareRegMessage(clientId, countryId int, name, description *string, isPub bool, metaInfo json.RawMessage, tx *sql.Tx) (*string, error) {
+	var companyId int
+	err := tx.QueryRow(`INSERT INTO company(name, description, country_id, pub, meta) VALUES ($1, $2, $3, $4, $5) RETURNING id`,
+							name, description, countryId, isPub, metaInfo).Scan(&companyId)
+	if err != nil {
+		log.Println("Models.Company.PrepareRegMessage insert company", err)
+		return nil, errors.New("something wrong")
+	}
+	_, err = tx.Exec(`INSERT INTO client_company(client_id, company_id, gr_admin, gr_invite, gr_kick,
+							gr_read, gr_write, gr_update, gr_delete, responsible, client_confirm, company_confirm) VALUES (
+							$1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)`,
+							clientId, companyId, true, true, true, true, true, true, true, true, true, true)
+	if err != nil {
+		log.Println("Models.Company.PrepareRegMessage insert client_company ", err)
+		return nil, errors.New("something wrong")
+	}
+
+	hash := sha256.New()
+	curTime := time.Now()
+	hash.Write([]byte(*name + *description + curTime.String()))
+	sha := base64.URLEncoding.EncodeToString(hash.Sum(nil))
+	return &sha, nil
+}
+
+func ConfirmCompany(sha *string, db *sql.DB) error{
+	_, err := db.Exec("UPDATE company SET confirm = $1, created = $2", true, time.Now())
+	if err != nil {
+		log.Println("Models.Company.ConfirmCompany ", err)
+		return errors.New("something wrong")
+	}
+	return nil
 }
 
 

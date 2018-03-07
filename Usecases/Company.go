@@ -6,7 +6,109 @@ import (
 	"docnota/Utils"
 	"errors"
 	"encoding/json"
+	"log"
+	"fmt"
 )
+
+func CreateCompany(metaInfo map[string]interface{}, token *string, db *sql.DB) error{
+	var countInpData, countNecessaryData int
+	userId, err := Utils.ParseToken(token)
+	if err != nil {
+		return err
+	}
+
+	if userId == 0{
+		return errors.New("access denied")
+	}
+
+
+	countryId, ok := metaInfo["country_id"].(float64)
+	if !ok{
+		return errors.New("bad country id")
+	}
+
+	name, ok := metaInfo["name"].(string)
+	if !ok{
+		return errors.New("bad name")
+	}
+
+	description, ok := metaInfo["description"].(string)
+	if !ok{
+		return errors.New("bad description")
+	}
+
+	public, ok := metaInfo["public"].(bool)
+	if !ok{
+		return errors.New("bad public flag")
+	}
+
+	delete(metaInfo, "country_id")
+	delete(metaInfo, "name")
+	delete(metaInfo, "description")
+	delete(metaInfo, "public")
+	countInpData = len(metaInfo)
+
+	companyMetaByCountry, err := Models.GetCountryMeta(int(countryId), db)
+	if err != nil {
+		return err
+	}
+
+	var curClaims []map[string]interface{}
+	err = json.Unmarshal(*companyMetaByCountry, &curClaims)
+	if err != nil {
+		return err
+	}
+
+	for _, claims := range curClaims{
+		for name, _ := range metaInfo{
+			if name == claims["name"]{
+				countNecessaryData++
+			}
+		}
+	}
+
+	if countInpData == countNecessaryData{
+		tx, err := db.Begin()
+		if err != nil {
+			log.Println("Useceases.Company.CreateCompany ", err)
+			return nil
+		}
+		result, _ := json.Marshal(metaInfo)
+		sha, err := Models.PrepareRegMessage(userId, int(countryId), &name, &description, public, json.RawMessage(result), tx)
+		if err != nil {
+			tx.Rollback()
+			return err
+		}
+
+		body := fmt.Sprintf("<html><body><h1><a href='http://%s%s'> Enter for confirm </a> \n" +
+									" Company %s description %s \n meta %s", Utils.MainConfig.ServerConf.Address, *sha,
+									name, description, metaInfo)
+
+		err = Utils.SendEmail("bbshk@rsrch.ru", Utils.MainConfig.EmailConf.Addr, body, "Company registration")
+		if err != nil {
+			log.Println("Useceases.Company.CreateCompany ", err)
+			return nil
+		}
+
+		err = tx.Commit()
+		if err != nil {
+			log.Println("Useceases.Company.CreateCompany ", err)
+			return nil
+		}
+	}else {
+		return errors.New("not enough necessary data for company registration")
+	}
+
+	return nil
+}
+
+func ConfirmCompany(sha *string, db *sql.DB)error{
+	err := Models.ConfirmCompany(sha, db)
+	if err != nil {
+		return err
+	}
+	return nil
+}
 
 func GetCompanyList(db *sql.DB)([]Models.Company, error){
 	companies, err := Models.CompanyList(db)
