@@ -36,3 +36,13 @@ func GetCountryList(db *sql.DB) ([]Country, error){
 	}
 	return countries, nil
 }
+
+func GetCountryIdByName(name *string, db *sql.DB) (int, error){
+	var curId int
+	err := db.QueryRow(`SELECT id FROM country WHERE name = $1`, name).Scan(&curId)
+	if err != nil {
+		log.Println("Models.Utils.GetCountryIdByName ", err)
+		return 0, errors.New("something wrong")
+	}
+	return curId, nil
+}

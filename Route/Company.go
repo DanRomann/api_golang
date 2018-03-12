@@ -8,6 +8,7 @@ import (
 	"strconv"
 	"github.com/gorilla/mux"
 	"errors"
+	"docnota/Models"
 )
 
 func getCompanies(w http.ResponseWriter, r *http.Request){
@@ -67,14 +68,14 @@ func createCompany(w http.ResponseWriter, r *http.Request){
 	defer r.Body.Close()
 
 
-	var curRequest map[string]interface{}
-	err := decoder.Decode(&curRequest)
+	curGroup := new(Models.Company)
+	err := decoder.Decode(&curGroup)
 	if err != nil {
 		ErrResponse(errors.New("bad data"), w)
 		return
 	}
 
-	err = Usecases.CreateCompany(curRequest, &token, Utils.Connect)
+	err = Usecases.CreateCompany(curGroup, &token, Utils.Connect)
 	if err != nil {
 		ErrResponse(err, w)
 		return

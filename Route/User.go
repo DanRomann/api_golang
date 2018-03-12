@@ -10,6 +10,7 @@ import (
 	"encoding/json"
 	"github.com/gorilla/mux"
 	"strconv"
+	"log"
 )
 
 func createUser(w http.ResponseWriter, r *http.Request){
@@ -227,4 +228,31 @@ func acceptDoc(w http.ResponseWriter, r *http.Request){
 
 	SuccessResponse("ok", w)
 
+}
+
+func uploadUserAvatar(w http.ResponseWriter, r *http.Request){
+	token := r.Header.Get("Authorization")
+	file, handler, err := r.FormFile("photo")
+	if err != nil {
+		ErrResponse(errors.New("bad data"), w)
+		return
+	}
+	defer file.Close()
+
+	fileContent := make([]byte, handler.Size)
+	_, err = file.Read(fileContent)
+	if err != nil {
+		log.Println("Route.User.uploadUserAvatar ", err)
+		ErrResponse(errors.New("something wrong"), w)
+		return
+	}
+
+	user, err := Usecases.UploadUserAvatar(fileContent, &handler.Filename, &token, Utils.Connect)
+	if err != nil {
+		ErrResponse(err, w)
+		return
+	}
+
+	result, _ := json.Marshal(user)
+	DataResponse(result, w)
 }

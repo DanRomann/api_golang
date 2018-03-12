@@ -10,7 +10,7 @@ import (
 	"fmt"
 )
 
-func CreateCompany(metaInfo map[string]interface{}, token *string, db *sql.DB) error{
+func CreateCompany(curGroup *Models.Company, token *string, db *sql.DB) error{
 	var countInpData, countNecessaryData int
 	userId, err := Utils.ParseToken(token)
 	if err != nil {
@@ -21,34 +21,14 @@ func CreateCompany(metaInfo map[string]interface{}, token *string, db *sql.DB) e
 		return errors.New("access denied")
 	}
 
-
-	countryId, ok := metaInfo["country_id"].(float64)
-	if !ok{
-		return errors.New("bad country id")
-	}
-
-	name, ok := metaInfo["name"].(string)
-	if !ok{
-		return errors.New("bad name")
-	}
-
-	description, ok := metaInfo["description"].(string)
-	if !ok{
-		return errors.New("bad description")
-	}
-
-	public, ok := metaInfo["public"].(bool)
-	if !ok{
-		return errors.New("bad public flag")
-	}
-
-	delete(metaInfo, "country_id")
-	delete(metaInfo, "name")
-	delete(metaInfo, "description")
-	delete(metaInfo, "public")
+	var metaInfo map[string]interface{}
 	countInpData = len(metaInfo)
 
-	companyMetaByCountry, err := Models.GetCountryMeta(int(countryId), db)
+	countryId, err := Models.GetCountryIdByName(&curGroup.Name, db)
+	if err != nil {
+		return err
+	}
+	companyMetaByCountry, err := Models.GetCountryMeta(countryId, db)
 	if err != nil {
 		return err
 	}
@@ -73,8 +53,9 @@ func CreateCompany(metaInfo map[string]interface{}, token *string, db *sql.DB) e
 			log.Println("Useceases.Company.CreateCompany ", err)
 			return nil
 		}
-		result, _ := json.Marshal(metaInfo)
-		sha, err := Models.PrepareRegMessage(userId, int(countryId), &name, &description, public, json.RawMessage(result), tx)
+		result, _ := json.Marshal(curGroup.Meta)
+		sha, err := Models.PrepareRegMessage(userId, countryId, &curGroup.Name, &curGroup.Description,
+											curGroup.Public, json.RawMessage(result), tx)
 		if err != nil {
 			tx.Rollback()
 			return err
@@ -82,7 +63,7 @@ func CreateCompany(metaInfo map[string]interface{}, token *string, db *sql.DB) e
 
 		body := fmt.Sprintf("<html><body><h1><a href='http://%s%s'> Enter for confirm </a> \n" +
 									" Company %s description %s \n meta %s", Utils.MainConfig.ServerConf.Address, *sha,
-									name, description, metaInfo)
+									curGroup.Name, curGroup.Description, metaInfo)
 
 		err = Utils.SendEmail("bbshk@rsrch.ru", Utils.MainConfig.EmailConf.Addr, body, "Company registration")
 		if err != nil {

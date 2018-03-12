@@ -474,3 +474,13 @@ func (user *User) HasPermissionToBlock(blockId int, db *sql.DB) bool{
 	}
 	return true
 }
+
+func (user *User) UploadAvatar(fileName *string, db *sql.DB) error{
+	_, err := db.Exec(`UPDATE client SET avatar = $1 WHERE id = $2`, fileName, user.ID)
+	if err != nil {
+		log.Println("Models.User.UploadAvatar ", err)
+		return errors.New("something wrong")
+	}
+	user.Avatar = *fileName
+	return nil
+}

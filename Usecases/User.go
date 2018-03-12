@@ -9,6 +9,10 @@ import (
 	"docnota/Utils"
 	"unicode/utf8"
 	"strconv"
+	"crypto/md5"
+	"encoding/hex"
+	"os"
+	"time"
 )
 
 func CreateUser(user *Models.User, db *sql.DB) error{
@@ -330,4 +334,44 @@ func SearchUserByQuery(query *string, token *string, db *sql.DB)([]Models.User, 
 	}
 
 	return users, nil
+}
+
+func UploadUserAvatar(fileContent []byte, fileName *string, token *string, db *sql.DB) (*Models.User, error){
+	curUser, err := Utils.ParseToken(token)
+	if err != nil {
+		return nil, err
+	}
+
+	if curUser == 0{
+		return nil, errors.New("access denied")
+	}
+
+	user := new(Models.User)
+	user.ID = curUser
+
+	userId := strconv.Itoa(user.ID)
+	hasher := md5.New()
+	hasher.Write([]byte(*fileName + userId + time.Now().String()))
+	newName := hex.EncodeToString(hasher.Sum(nil))
+	dir := "users/" + newName
+	newFile, err := os.OpenFile(Utils.MainConfig.ServerConf.StaticDir + dir, os.O_WRONLY|os.O_CREATE, 0666)
+	if err != nil{
+		log.Println("Usercaes.User.UploadUserAvatar ", err)
+		return nil, errors.New("something wrong")
+	}
+
+	_, err = newFile.Write(fileContent)
+	if err != nil {
+		log.Println("Usercaes.User.UploadUserAvatar ", err)
+		return nil, errors.New("something wrong")
+	}
+
+	err = user.UploadAvatar(&newName, db)
+	if err != nil {
+		log.Println("Usercaes.User.UploadUserAvatar ", err)
+		return nil, errors.New("something wrong")
+	}
+	defer newFile.Close()
+
+	return user, nil
 }

@@ -21,6 +21,7 @@ func Route() *mux.Router {
 	r.HandleFunc("/user/{userId}/inbox", getUserInbox).Methods("GET")
 	r.HandleFunc("/user/send_doc", sendDocToUser).Methods("POST")
 	r.HandleFunc("/user/accept_doc/{docId}", acceptDoc).Methods("POST")
+	r.HandleFunc("/user/uploadImage", uploadUserAvatar).Methods("POST")
 
 
 
@@ -47,6 +48,7 @@ func Route() *mux.Router {
 	r.HandleFunc("/user/search", searchUser).Methods("POST")
 
 	r.HandleFunc("/country", CountryList).Methods("GET")
+
 
 	return r
 }
