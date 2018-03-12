@@ -13,6 +13,8 @@ import (
 	"encoding/hex"
 	"os"
 	"time"
+	"mime/multipart"
+	"strings"
 )
 
 func CreateUser(user *Models.User, db *sql.DB) error{
@@ -336,7 +338,7 @@ func SearchUserByQuery(query *string, token *string, db *sql.DB)([]Models.User, 
 	return users, nil
 }
 
-func UploadUserAvatar(fileContent []byte, fileName *string, token *string, db *sql.DB) (*Models.User, error){
+func UploadUserAvatar(fileContent []byte, fileHandler *multipart.FileHeader, token *string, db *sql.DB) (*Models.User, error){
 	curUser, err := Utils.ParseToken(token)
 	if err != nil {
 		return nil, err
@@ -351,8 +353,9 @@ func UploadUserAvatar(fileContent []byte, fileName *string, token *string, db *s
 
 	userId := strconv.Itoa(user.ID)
 	hasher := md5.New()
-	hasher.Write([]byte(*fileName + userId + time.Now().String()))
-	newName := hex.EncodeToString(hasher.Sum(nil))
+	ext := strings.Split(fileHandler.Filename, ".")[1]
+	hasher.Write([]byte(fileHandler.Filename + userId + time.Now().String()))
+	newName := hex.EncodeToString(hasher.Sum(nil)) + "." + ext
 	dir := "users/" + newName
 	newFile, err := os.OpenFile(Utils.MainConfig.ServerConf.StaticDir + dir, os.O_WRONLY|os.O_CREATE, 0666)
 	if err != nil{

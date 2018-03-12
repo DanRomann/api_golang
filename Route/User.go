@@ -237,6 +237,7 @@ func uploadUserAvatar(w http.ResponseWriter, r *http.Request){
 		ErrResponse(errors.New("bad data"), w)
 		return
 	}
+	log.Println(handler.Filename)
 	defer file.Close()
 
 	fileContent := make([]byte, handler.Size)
@@ -247,7 +248,7 @@ func uploadUserAvatar(w http.ResponseWriter, r *http.Request){
 		return
 	}
 
-	user, err := Usecases.UploadUserAvatar(fileContent, &handler.Filename, &token, Utils.Connect)
+	user, err := Usecases.UploadUserAvatar(fileContent, handler, &token, Utils.Connect)
 	if err != nil {
 		ErrResponse(err, w)
 		return
