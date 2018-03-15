@@ -1,6 +1,7 @@
 package Models
 
 import (
+	"github.com/satori/go.uuid"
 	"database/sql"
 	"log"
 	"errors"
@@ -12,15 +13,22 @@ type Meta struct {
 }
 
 type Block struct{
-	Id          int		`json:"block_id,omitempty"`
-	ParentID    int		`json:"parent_id,omitempty"`
-	Name        string	`json:"name,omitempty"`
-	Content     string	`json:"content,omitempty"`
-	Order       int		`json:"order,omitempty"`
-	LastUpdated string	`json:"date,omitempty"`
-	DocId		int		`json:"doc_id,omitempty"`
-	Ltree		string	`json:"ltree,omitempty"`
-	Meta        Meta	`json:"meta,omitempty"`
+	Id          	int			`json:"block_id,omitempty"`
+	ParentID    	int			`json:"parent_id,omitempty"`
+	Name        	string		`json:"name,omitempty"`
+	Content     	string		`json:"content,omitempty"`
+	Order       	int			`json:"order,omitempty"`
+	LastUpdated 	string		`json:"date,omitempty"`
+	DocId			int			`json:"doc_id,omitempty"`
+	Ltree			string		`json:"ltree,omitempty"`
+	Meta        	Meta		`json:"meta,omitempty"`
+	RelationsCount	int			`json:"relations_count,omitempty"`
+	UUID			string		`json:"uuid"`
+}
+
+type Relations struct {
+	Id		int		`json:"id"`
+	Name	string	`json:"name"`
 }
 
 type BlockInteraction interface{
@@ -36,7 +44,7 @@ type BlockInteraction interface{
 	DeleteFromDocument(docId int, db *sql.DB) error
 	DeleteFromGroup(groupId int, tx *sql.Tx) error
 
-	BelongToDocumentAndUserOrPublic(db *sql.DB) bool
+	SecureGet(userId int, db *sql.DB) bool
 }
 
 func (block *Block) Get(db *sql.DB) error{
@@ -53,18 +61,21 @@ func (block *Block) Get(db *sql.DB) error{
 	return nil
 }
 
-func (block *Block) Update(tx *sql.Tx) error{
-	var err error
+func (block *Block) Update(tx *sql.Tx) (int, error){
+	var err 	error
+	var newId 	int
 	if block.ParentID == 0 {
-		_, err = tx.Exec(`SELECT update_block($1, $2, $3, $4, $5)`, block.Id, nil, block.Name, block.Content, block.Order)
+		err = tx.QueryRow(`SELECT update_block($1, $2, $3, $4, $5, $6)`, block.Id, nil, block.Name,
+			block.Content, block.Order, block.UUID).Scan(&newId)
 	}else {
-		_, err = tx.Exec(`SELECT update_block($1, $2, $3, $4, $5)`, block.Id, block.ParentID, block.Name, block.Content, block.Order)
+		err = tx.QueryRow(`SELECT update_block($1, $2, $3, $4, $5, $6)`, block.Id, block.ParentID,
+			block.Name, block.Content, block.Order, block.UUID).Scan(&newId)
 	}
 	if err != nil {
 		log.Println("Models.Block.Update ", err)
-		return errors.New("something wrong")
+		return 0, errors.New("something wrong")
 	}
-	return nil
+	return newId, nil
 }
 
 func (block *Block) Delete(tx *sql.Tx) error{
@@ -108,14 +119,16 @@ func (block *Block) BelongToDocumentAndUser(userId, docId int, db *sql.DB) bool{
 
 func (block *Block)	Create(tx *sql.Tx) error{
 	var err error
+	uid := uuid.NewV4()
+	curTime := time.Now()
 	if block.ParentID == 0 {
-		err = tx.QueryRow(`INSERT INTO block(name, content, last_updated, parent_id, ord, doc_id)
-							  VALUES ($1, $2, $3, $4, $5, $6) RETURNING id`, block.Name, block.Content, time.Now(),
-			nil, block.Order, block.DocId).Scan(&block.Id)
+		err = tx.QueryRow(`INSERT INTO block(name, content, last_updated, parent_id, ord, doc_id, uid, start_date)
+							  VALUES ($1, $2, $3, $4, $5, $6, &7, &8) RETURNING id`, block.Name, block.Content, curTime,
+			nil, block.Order, block.DocId, uid, curTime).Scan(&block.Id)
 	}else {
-		err = tx.QueryRow(`INSERT INTO block(name, content, last_updated, parent_id, ord, doc_id)
-							  VALUES ($1, $2, $3, $4, $5, $6) RETURNING id`, block.Name, block.Content, time.Now(),
-			block.ParentID, block.Order, block.DocId).Scan(&block.Id)
+		err = tx.QueryRow(`INSERT INTO block(name, content, last_updated, parent_id, ord, doc_id, uid, start_date)
+							  VALUES ($1, $2, $3, $4, $5, $6, &7, &8) RETURNING id`, block.Name, block.Content, curTime,
+			block.ParentID, block.Order, block.DocId, uid, curTime).Scan(&block.Id)
 	}
 	if err != nil {
 		log.Println("Models.Block.Create ", err)
@@ -175,5 +188,90 @@ func SearchBlock(query *string, db *sql.DB) ([]Block, error){
 		log.Println("Search block ", err)
 		return nil, err
 	}
+	return blocks, nil
+}
+
+func (block *Block) SecureGet(userId int, db *sql.DB) error{
+	var parentBlock	sql.NullInt64
+	err := db.QueryRow(`SELECT b.name, b.content, b.last_updated, b.parent_id, b.ord, b.doc_id FROM block b
+							  JOIN document doc ON doc.id = b.doc_id
+							  WHERE b.id = $1 AND (doc.public = TRUE OR client_id = $2)`, block.Id, userId).Scan(&block.Name,
+							  	&block.Content, &block.LastUpdated, &parentBlock, &block.Order, &block.DocId)
+	if err != nil {
+		return errors.New("access denied")
+	}
+	if parentBlock.Valid{
+		block.ParentID = int(parentBlock.Int64)
+	}
+	return nil
+}
+
+func BlockBelongToUser(userId, blockId int, db *sql.DB) bool{
+	var blockName string
+	err := db.QueryRow(`SELECT b.name FROM block b
+							  JOIN document doc ON doc.id = b.doc_id
+							  WHERE b.id = $1 and doc.client_id = $2`, blockId, userId).Scan(&blockName)
+	if err != nil {
+		log.Println("Models.Block.BlockBelongToUser ", err)
+		return false
+	}
+	return true
+}
+
+func BlockBelongOrPublic(userId, blockId int, db *sql.DB) bool{
+	var blockName string
+	err := db.QueryRow(`SELECT b.name FROM block b
+							  JOIN document doc ON doc.id = b.doc_id
+							  WHERE b.id = $1 and (doc.client_id = $2 OR doc.public = TRUE)`, blockId, userId).Scan(&blockName)
+	if err != nil {
+		log.Println("Models.Block.BlockBelongOrPublic ", err)
+		return false
+	}
+	return true
+}
+
+func AddRelation(blockId, relationId int, db *sql.DB) error{
+	_, err := db.Exec(`INSERT INTO block_relation(block_id, relation_block) VALUES ($1, $2)`, blockId, relationId)
+	if err != nil {
+		return errors.New("something wrong")
+	}
+	return nil
+}
+
+func SecureRelationDelete(blockId, relationId int, db *sql.DB) error{
+	_, err := db.Exec(`DELETE FROM block_relation WHERE block_id = $1 AND relation_block = $2`, blockId, relationId)
+	if err != nil {
+		log.Println("Models.Block.SecureRelationDelete ", err)
+		return errors.New("something wrong")
+	}
+	return nil
+}
+
+func BlockRelations(blockId int, db *sql.DB) ([]Block, error){
+	rows, err := db.Query(`SELECT id, name, content, start_date, doc_id FROM block b
+								 JOIN block_relation br ON br.relation_block = b.id
+								 WHERE br.block_id = $1`, blockId)
+	if err != nil {
+		log.Println("Models.Block.BlockRelations ", err)
+		return nil, errors.New("something wrong")
+	}
+	defer rows.Close()
+
+	blocks := make([]Block, 0)
+	for rows.Next(){
+		block := new(Block)
+		err := rows.Scan(&block.Id, &block.Name, &block.Content, &block.LastUpdated, &block.DocId)
+		if err != nil {
+			log.Println("Models.Block.BlockRelations ", err)
+			return nil, errors.New("something wrong")
+		}
+		blocks = append(blocks, *block)
+	}
+
+	if err = rows.Err(); err != nil{
+		log.Println("Models.Block.BlockRelations ", err)
+		return nil, errors.New("something wrong")
+	}
+
 	return blocks, nil
 }

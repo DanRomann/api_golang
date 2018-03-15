@@ -50,6 +50,12 @@
   version = "v1.2"
 
 [[projects]]
+  name = "github.com/satori/go.uuid"
+  packages = ["."]
+  revision = "f58768cc1a7a7e77a3bd49e98cdd21419399b6a3"
+  version = "v1.2.0"
+
+[[projects]]
   branch = "master"
   name = "golang.org/x/crypto"
   packages = [
@@ -61,6 +67,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "d3bcab1b1f3a47947e80e2c10fe3f19b278b9ea051f7667f61f7d0b59afec2dc"
+  inputs-digest = "486d678f178bb27b8dcf2f778d68f685202723683231df70b4635f4b4049ddc7"
   solver-name = "gps-cdcl"
   solver-version = 1

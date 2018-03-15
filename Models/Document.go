@@ -122,31 +122,37 @@ func PublicDocuments(isTemplate bool, db *sql.DB) ([]Document, error){
 func (doc *Document) Get(db *sql.DB) error{
 	var description sql.NullString
 	rows, err := db.Query(`
-							  WITH RECURSIVE tree AS(
-							  SELECT
-    							ARRAY[]::INTEGER[] || b.ord as path,
-								b.id,
-								b.parent_id,
-								b.name,
-								b.content,
-								b.ord,
-								b.last_updated
-								FROM block b
-								WHERE b.doc_id = $1 AND b.parent_id IS NULL
-							
-							  UNION ALL
-							
-							  SELECT
-    							path || b.ord,
-								b.id,
-								b.parent_id,
-								b.name,
-								b.content,
-								b.ord,
-								b.last_updated
-								FROM block b
-								JOIN tree ON tree.id = b.parent_id
-							) SELECT id, parent_id, name, content, ord, last_updated, path FROM tree ORDER BY path`, doc.ID)
+								WITH RECURSIVE tree AS(
+							  		SELECT
+    								ARRAY[]::INTEGER[] || b.ord as path,
+									b.id,
+									b.parent_id,
+									b.name,
+									b.content,
+									b.ord,
+									b.last_updated,
+                					(SELECT count(relation_block) FROM block_relation br WHERE br.block_id = b.id) as br
+									FROM block b
+										WHERE b.doc_id = $1 AND b.parent_id IS NULL
+
+							  		UNION ALL
+
+							  		SELECT
+    								path || b.ord,
+									b.id,
+									b.parent_id,
+									b.name,
+									b.content,
+									b.ord,
+									b.last_updated,
+                					(SELECT count(relation_block) FROM block_relation br WHERE br.block_id = b.id) as br
+									FROM block b
+										JOIN tree ON tree.id = b.parent_id
+									) SELECT id, parent_id, name, content, ord, last_updated, br, path FROM tree ORDER BY path;
+
+
+
+`, doc.ID)
 	if err != nil {
 		log.Println("Models.Document.Get ", err)
 		return errors.New("something wrong")
@@ -158,7 +164,7 @@ func (doc *Document) Get(db *sql.DB) error{
 		var blockContent 	sql.NullString
 
 		block := new(Block)
-		err = rows.Scan(&block.Id, &parentId, &block.Name, &blockContent, &block.Order, &block.LastUpdated, &block.Ltree)
+		err = rows.Scan(&block.Id, &parentId, &block.Name, &blockContent, &block.Order, &block.LastUpdated, &block.RelationsCount, &block.Ltree)
 		block.DocId = doc.ID
 		if err != nil {
 			log.Println("Models.Document.Get ", err)

@@ -192,7 +192,7 @@ func ChangeDoc(newBlock *Models.Block, token *string, db *sql.DB) (*Models.Block
 		}
 
 		//Update block
-		err = newBlock.Update(tx)
+		newId, err := newBlock.Update(tx)
 		if err != nil {
 			tx.Rollback()
 			return nil, err
@@ -202,6 +202,7 @@ func ChangeDoc(newBlock *Models.Block, token *string, db *sql.DB) (*Models.Block
 			log.Println("Usecases.Document.ChangeDoc, ", err)
 			return nil, errors.New("something wrong")
 		}
+		newBlock.Id = newId
 		return newBlock, nil
 
 	}
