@@ -212,7 +212,6 @@ func GetCountryMeta(countryId int, db *sql.DB)(*json.RawMessage, error){
 	var result *json.RawMessage
 	err := db.QueryRow(`SELECT fields FROM company_meta WHERE country_id = $1`, countryId).Scan(&result)
 	if err != nil {
-		log.Println("Models.Company.GetCountryMeta ", err)
 		return nil, errors.New("something wrong")
 	}
 	return result, nil
