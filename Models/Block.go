@@ -23,7 +23,7 @@ type Block struct{
 	Ltree			string		`json:"ltree,omitempty"`
 	Meta        	Meta		`json:"meta,omitempty"`
 	RelationsCount	int			`json:"relations_count,omitempty"`
-	UUID			string		`json:"uuid"`
+	UUID			uuid.UUID	`json:"uuid"`
 }
 
 type Relations struct {
