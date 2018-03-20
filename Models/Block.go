@@ -90,25 +90,22 @@ func (block *Block) Delete(tx *sql.Tx) error{
 func (block *Block) BelongToDocumentAndUser(userId, docId int, db *sql.DB) bool{
 	var err  error
 	var name string
-	if block.ParentID != 0 {
-		err = db.QueryRow(`SELECT block.name FROM block
-								 JOIN document ON document.id = block.doc_id
-								 JOIN client ON client.id = document.client_id
-								 WHERE document.id = $1
-								 AND client.id = $2
-								 AND block.id = $3`,
-								docId, userId, block.Id).Scan(&name)
-		if err != nil {
-			log.Println("Models.Block.BelongToDocumentAndUser ", err)
-			return false
-		}
-		err = db.QueryRow(`SELECT block.name FROM block
-								 JOIN document ON document.id = block.doc_id
-								 JOIN client ON client.id = document.client_id
-								 WHERE document.id = $1
-								 AND client.id = $2
-								 AND block.id = $3`,
-			docId, userId, block.ParentID).Scan(&name)
+	err = db.QueryRow(`SELECT b.name FROM block b
+							JOIN document doc ON doc.id = b.doc_id
+							JOIN client cl ON cl.id = doc.client_id
+							WHERE client_id = $1 AND doc_id = $2 AND b.id = $3`,
+							userId, docId, block.Id).Scan(&name)
+	if err != nil {
+		log.Println("Models.Block.BelongToDocumentAndUser ", err)
+		return false
+	}
+
+	if block.ParentID != 0{
+		err = db.QueryRow(`SELECT b.name FROM block b
+							JOIN document doc ON doc.id = b.doc_id
+							JOIN client cl ON cl.id = doc.client_id
+							WHERE client_id = $1 AND doc_id = $2 AND b.id = $3`,
+							userId, docId, block.ParentID).Scan(&name)
 		if err != nil {
 			log.Println("Models.Block.BelongToDocumentAndUser ", err)
 			return false
