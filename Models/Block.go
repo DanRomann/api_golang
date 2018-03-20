@@ -120,11 +120,11 @@ func (block *Block)	Create(tx *sql.Tx) error{
 	curTime := time.Now()
 	if block.ParentID == 0 {
 		err = tx.QueryRow(`INSERT INTO block(name, content, last_updated, parent_id, ord, doc_id, uid, start_date)
-							  VALUES ($1, $2, $3, $4, $5, $6, &7, &8) RETURNING id`, block.Name, block.Content, curTime,
+							  VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING id`, block.Name, block.Content, curTime,
 			nil, block.Order, block.DocId, uid, curTime).Scan(&block.Id)
 	}else {
 		err = tx.QueryRow(`INSERT INTO block(name, content, last_updated, parent_id, ord, doc_id, uid, start_date)
-							  VALUES ($1, $2, $3, $4, $5, $6, &7, &8) RETURNING id`, block.Name, block.Content, curTime,
+							  VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING id`, block.Name, block.Content, curTime,
 			block.ParentID, block.Order, block.DocId, uid, curTime).Scan(&block.Id)
 	}
 	if err != nil {
