@@ -23,7 +23,7 @@ type Block struct{
 	Ltree			string		`json:"ltree,omitempty"`
 	Meta        	Meta		`json:"meta,omitempty"`
 	RelationsCount	int			`json:"relations_count,omitempty"`
-	UUID			uuid.UUID	`json:"uuid"`
+	UUID			uuid.UUID	`json:"uuid,omitempty"`
 }
 
 type Relations struct {
@@ -74,6 +74,9 @@ func (block *Block) Update(tx *sql.Tx) (int, error){
 	if err != nil {
 		log.Println("Models.Block.Update ", err)
 		return 0, errors.New("something wrong")
+	}
+	if newId == 0{
+		return 0, errors.New("bad order")
 	}
 	return newId, nil
 }
