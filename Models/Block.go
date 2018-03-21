@@ -68,7 +68,7 @@ func (block *Block) Update(tx *sql.Tx) (int, error){
 		err = tx.QueryRow(`SELECT update_block($1, $2, $3, $4, $5, $6)`, block.Id, nil, block.Name,
 			block.Content, block.Order, block.UUID).Scan(&newId)
 	}else {
-		err = tx.QueryRow(`SELECT update_block($1, $2, $3, $4, $5, $6)`, block.Id, block.ParentID,
+	err = tx.QueryRow(`SELECT update_block($1, $2, $3, $4, $5, $6)`, block.Id, block.ParentID,
 			block.Name, block.Content, block.Order, block.UUID).Scan(&newId)
 	}
 	if err != nil {

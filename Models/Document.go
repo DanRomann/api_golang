@@ -133,7 +133,7 @@ func (doc *Document) Get(db *sql.DB) error{
 									b.last_updated,
                 					(SELECT count(relation_block) FROM block_relation br WHERE br.block_id = b.id) as br
 									FROM block b
-										WHERE b.doc_id = $1 AND b.parent_id IS NULL
+										WHERE b.doc_id = $1 AND b.parent_id IS NULL AND b.last_date IS NULL
 
 							  		UNION ALL
 
@@ -145,7 +145,7 @@ func (doc *Document) Get(db *sql.DB) error{
 									b.content,
 									b.ord,
 									b.last_updated,
-                					(SELECT count(relation_block) FROM block_relation br WHERE br.block_id = b.id) as br
+                					(SELECT count(relation_block) FROM block_relation br WHERE br.block_id = b.id AND b.last_date IS NULL) as br
 									FROM block b
 										JOIN tree ON tree.id = b.parent_id
 									) SELECT id, parent_id, name, content, ord, last_updated, br, path FROM tree ORDER BY path;
