@@ -266,3 +266,30 @@ func DocMetaEdit(doc *Models.Document, token *string, db *sql.DB) error{
 	}
 	return nil
 }
+
+func BlockChainUpload(docId int, token *string, db *sql.DB) error{
+	userId, err := Utils.ParseToken(token)
+	if err != nil {
+		return err
+	}
+
+	if userId == 0{
+		return errors.New("access denied")
+	}
+
+	doc := new(Models.Document)
+	doc.ID = docId
+
+	user := new(Models.User)
+	user.ID = userId
+
+	if !doc.BelongToUser(userId, db){
+		return errors.New("access denied")
+	}
+
+	err = UploadDocument(user, doc)
+	if err != nil {
+		return err
+	}
+	return nil
+}

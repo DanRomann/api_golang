@@ -172,3 +172,20 @@ func metaEdit(w http.ResponseWriter, r *http.Request){
 
 	SuccessResponse("ok", w)
 }
+
+func blockChainUploadDoc(w http.ResponseWriter, r *http.Request){
+	token := r.Header.Get("Authorization")
+
+	vars := mux.Vars(r)
+	docId, err := strconv.Atoi(vars["docId"])
+	if err != nil {
+		ErrResponse(errors.New("bad doc id"), w)
+		return
+	}
+
+	err = Usecases.BlockChainUpload(docId, &token, Utils.Connect)
+	if err != nil {
+		ErrResponse(err, w)
+	}
+	SuccessResponse("ok", w)
+}

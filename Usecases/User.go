@@ -99,6 +99,11 @@ func ConfirmUser(user *Models.User, uid *string, db *sql.DB) (*string, error){
 		log.Println("Usecases.User.ConfirmUser ", err)
 		return nil, errors.New("something wrong")
 	}
+
+	err = RegisterUser(user)
+	if err != nil {
+		log.Println("Usecases.User.ConfirmUser , blockchain ", err)
+	}
 	return token, nil
 }
 
