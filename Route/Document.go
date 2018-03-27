@@ -189,3 +189,13 @@ func blockChainUploadDoc(w http.ResponseWriter, r *http.Request){
 	}
 	SuccessResponse("ok", w)
 }
+
+func iframeDocument(w http.ResponseWriter, r *http.Request){
+	vars := mux.Vars(r)
+	docId, err := strconv.Atoi(vars["docId"])
+	if err != nil{
+		ErrResponse(errors.New("Bad request"), w)
+		return
+	}
+
+}

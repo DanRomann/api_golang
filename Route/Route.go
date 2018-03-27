@@ -61,5 +61,8 @@ func Route() *mux.Router {
 	//BlockChain
 	r.HandleFunc("/document/{docID}/blockChain/upload", blockChainUploadDoc).Methods("POST")
 
+	//iFrame
+	r.HandleFunc("/document/{docID}/iframe", iframeDocument).Methods("GET")
+
 	return r
 }
