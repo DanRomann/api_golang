@@ -23,8 +23,7 @@ func CreateCompany(curGroup *Models.Company, token *string, db *sql.DB) error{
 
 	var metaInfo map[string]interface{}
 	countInpData = len(metaInfo)
-
-	countryId, err := Models.GetCountryIdByName(&curGroup.Name, db)
+	countryId, err := Models.GetCountryIdByName(&curGroup.Country, db)
 	if err != nil {
 		return err
 	}
