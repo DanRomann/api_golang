@@ -7,12 +7,21 @@ import (
 	"docnota/Utils"
 	"log"
 	"time"
+	"flag"
 )
 
 func main() {
 	config := Utils.MainConfig
+	var dir string
+
 	r := Route.Route()
+
+	flag.StringVar(&dir, "dir", ".", config.ServerConf.StaticDir)
+	flag.Parse()
+
 	http.Handle("/", r)
+
+	r.PathPrefix("/static/").Handler(http.StripPrefix("/static", http.FileServer(http.Dir(dir))))
 	c := cors.New(cors.Options{
 		AllowedOrigins: []string{"*"},
 		AllowCredentials: true,

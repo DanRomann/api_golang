@@ -19,10 +19,10 @@
 
       <main class="content content--iframe">
         <div class="content__wrapper">
-          <div class="iframe__title">{{.Name}}</div>
-          <div class="iframe__date">{{.LastUpdated.Day}}-{{.LastUpdated.Month}}-{{.LastUpdated.Year}}</div>
+          <div class="iframe__title">{{.Document.Name}}</div>
+          <div class="iframe__date">{{.Document.LastUpdated.Day}}-{{.Document.LastUpdated.Month}}-{{.Document.LastUpdated.Year}}</div>
           <div class="iframe__description">
-            <span>Описание документа:</span><br>{{.Description}}
+            <b>{{.Block.Name}}</b> <br>{{.Block.Content}}
           </div>
           <div class="sep__iframe"></div>
           <button id="iframe__button--open-text"  class="iframe__button">Посмотреть полностью</button>
@@ -32,11 +32,10 @@
               ООО "Докнота"
             </div>
             <div class="iframe__number">
-              #{{.ID}}
+              #{{.Block.DocId}}
             </div>
           </div>
-          <button class="iframe__button iframe__button--update">Есть обновленная версия документа</button>
-        </div>
+          <button class="iframe__button iframe__button--update" data-fancybox data-src="#call_modal">Есть обновленная версия документа</button>
       </main>      
     </div>
     <script src="/static/Template/js/scripts.js"></script>
