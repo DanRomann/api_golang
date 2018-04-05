@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="ru">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <meta name="description" content="Это описание вашей страницы">
+    <meta name="keywords" content="Ключевые слова страницы...">
+    <meta name="format-detection" content="telephone=no">
+
+    <title>Просмотр документа</title>
+    <link rel="stylesheet" href="/static/Template/css/styles.css">
+
+    <!--[if lte IE 10]><script src="http://phpbbex.com/oldies/oldies.js" charset="utf-8"></script><![endif]-->
+  </head>
+
+  <body class="iframe">
+    <div>     
+
+      <main class="content content--iframe">
+        <div class="content__wrapper">
+          <div class="iframe__title">{{.Document.Name}}</div>
+          <div class="iframe__date">{{.Document.LastUpdated.Day}}-{{.Document.LastUpdated.Month}}-{{.Document.LastUpdated.Year}}</div>
+          <div class="iframe__description">
+            <b>{{.Block.Name}}</b> <br>{{.Block.Content}}
+          </div>
+          <div class="sep__iframe"></div>
+          <button id="iframe__button--open-text"  class="iframe__button">Посмотреть полностью</button>
+          <div class="iframe__footer">
+            <div class="iframe__company">
+              <svg class="logo__icon"><use xlink:href="imgs/sprite.svg#logo"></use></svg>
+              ООО "Докнота"
+            </div>
+            <div class="iframe__number">
+              #{{.Block.DocId}}
+            </div>
+          </div>
+          <button class="iframe__button iframe__button--update" data-fancybox data-src="#call_modal">Есть обновленная версия документа</button>
+      </main>      
+    </div>
+    <script src="/static/Template/js/scripts.js"></script>
+    <script src="/static/Template/js/custom-scripts.js"></script>
+  </body>
+</html>
+

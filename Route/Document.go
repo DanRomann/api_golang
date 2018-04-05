@@ -10,6 +10,7 @@ import (
 	"errors"
 	"io/ioutil"
 	"docnota/Models"
+	"html/template"
 )
 
 func getPublicDocs(w http.ResponseWriter, r *http.Request){
@@ -188,4 +189,28 @@ func blockChainUploadDoc(w http.ResponseWriter, r *http.Request){
 		ErrResponse(err, w)
 	}
 	SuccessResponse("ok", w)
+}
+
+func getDocIFrame(w http.ResponseWriter, r *http.Request){
+	token := ""
+	vars := mux.Vars(r)
+	tmpl, err := template.ParseFiles("Template/fb-iframe.html")
+	if err != nil {
+		ErrResponse(errors.New("template not found"), w)
+		return
+	}
+	docId, err := strconv.Atoi(vars["docId"])
+	if err != nil {
+		ErrResponse(errors.New("bad doc id"), w)
+		return
+	}
+
+	document, err := Usecases.GetDocument(docId, &token, Utils.Connect)
+	if err != nil {
+		ErrResponse(err, w)
+		return
+	}
+	//result, _ := json.Marshal(document)
+	//DataResponse(result, w)
+	tmpl.Execute(w, document)
 }

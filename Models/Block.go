@@ -18,7 +18,7 @@ type Block struct{
 	Name        	string		`json:"name,omitempty"`
 	Content     	string		`json:"content,omitempty"`
 	Order       	int			`json:"order,omitempty"`
-	LastUpdated 	string		`json:"date,omitempty"`
+	LastUpdated 	time.Time		`json:"date,omitempty"`
 	DocId			int			`json:"doc_id,omitempty"`
 	Ltree			string		`json:"ltree,omitempty"`
 	Meta        	Meta		`json:"meta,omitempty"`
