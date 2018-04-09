@@ -105,7 +105,7 @@ func deleteRelation(w http.ResponseWriter, r *http.Request){
 func getBlockIFrame(w http.ResponseWriter, r *http.Request){
 	token := r.Header.Get("Authorization")
 
-	tmpl, err := template.ParseFiles("Template/block-iframe.html")
+	tmpl, err := template.ParseFiles("Templates/block-iframe.html")
 	if err != nil {
 		ErrResponse(errors.New("template not found"), w)
 		return
@@ -133,9 +133,10 @@ func getBlockIFrame(w http.ResponseWriter, r *http.Request){
 	type Iframe struct {
 		Document Models.Document
 		Block Models.Block
+		Content template.HTML
 	}
 
-	iframe := Iframe{Document:*document, Block:*block}
+	iframe := Iframe{Document:*document, Block:*block, Content:template.HTML(block.Content)}
 
 	tmpl.Execute(w, iframe)
 }
