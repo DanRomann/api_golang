@@ -167,22 +167,22 @@ $(".input-file__input").on("change", function() {
     $(this).parents(".input-file").find(".input-file__file-name").text(fileName);
   }
 });
-var text = $('.iframe__description').text()
-var symbol= text.length;
-console.log(text)
-if (symbol > 400) {
-	var newText;
-	for (var i = 0; i < 400; i++) {
-		newText = newText + text[i];
-	}
-	$('.iframe__description').text(newText);
-	$('.iframe__description').addClass('iframe__description--after');
-	console.log(newText);
-}
-$( "#iframe__button--open-text" ).click(function() {
-  $('.iframe__description').text(text);
-  $('.iframe__description').removeClass('iframe__description--after');
-});
+// var text = $('.iframe__description').text()
+// var symbol= text.length;
+// console.log(text)
+// if (symbol > 400) {
+// 	var newText;
+// 	for (var i = 0; i < 400; i++) {
+// 		newText = newText + text[i];
+// 	}
+// 	$('.iframe__description').text(newText);
+// 	$('.iframe__description').addClass('iframe__description--after');
+// 	console.log(newText);
+// }
+// $( "#iframe__button--open-text" ).click(function() {
+//   $('.iframe__description').text(text);
+//   $('.iframe__description').removeClass('iframe__description--after');
+// });
 
 
 $(".lang").click(function() {
