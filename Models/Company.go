@@ -250,7 +250,17 @@ func ConfirmCompany(sha *string, db *sql.DB) error{
 	return nil
 }
 
-
+func (company *Company) GetByDocument(docId int, db *sql.DB) error{
+	err := db.QueryRow(`SELECT cm.id, cm.name, cm.description FROM company cm
+  							  JOIN company_doc cd on cm.id = cd.company_id
+  							  WHERE cd.doc_id = $1 AND cm.pub = TRUE AND cm.confirm = TRUE;`,
+		docId).Scan(&company.Id, &company.Name, &company.Description)
+	if err != nil {
+		//log.Println("Models.Company.Get ", err)
+		return errors.New("something wrong")
+	}
+	return nil
+}
 
 
 

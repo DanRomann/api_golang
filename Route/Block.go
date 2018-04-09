@@ -120,6 +120,7 @@ func getBlockIFrame(w http.ResponseWriter, r *http.Request){
 
 	block, err := Usecases.GetBlockById(blockId, &token, Utils.Connect)
 	if err != nil {
+		println(err)
 		ErrResponse(err, w)
 		return
 	}
@@ -130,13 +131,31 @@ func getBlockIFrame(w http.ResponseWriter, r *http.Request){
 		return
 	}
 
+	usr, err := Usecases.GetUser(document.UserId, &token, Utils.Connect)
+	if err != nil {
+		println("User not find")
+		//ErrResponse(err, w)
+		//return
+		usr = new(Models.User)
+	}
+
+	company, err := Usecases.GetCompanyByDocument(document.ID, &token, Utils.Connect)
+	if err != nil {
+		println("company not find")
+		//ErrResponse(err, w)
+		//return
+		company = new(Models.Company)
+	}
+
 	type Iframe struct {
 		Document Models.Document
 		Block Models.Block
 		Content template.HTML
+		User Models.User
+		Company Models.Company
 	}
 
-	iframe := Iframe{Document:*document, Block:*block, Content:template.HTML(block.Content)}
+	iframe := Iframe{Document:*document, Block:*block, Content:template.HTML(block.Content), User:*usr, Company:*company}
 
 	tmpl.Execute(w, iframe)
 }

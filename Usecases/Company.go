@@ -205,3 +205,13 @@ func GetCompanyMetaByCountry(countryId int, token *string, db *sql.DB)(*json.Raw
 
 	return meta, nil
 }
+
+func GetCompanyByDocument(docId int, token *string, db *sql.DB) (*Models.Company, error){
+	company := new(Models.Company)
+
+	err := company.GetByDocument(docId, db)
+	if err != nil {
+		return nil, err
+	}
+	return company, nil
+}

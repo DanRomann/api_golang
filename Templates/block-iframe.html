@@ -9,7 +9,7 @@
     <meta name="format-detection" content="telephone=no">
 
     <title>Просмотр документа</title>
-    <link rel="stylesheet" href="/static/css/styles.css">
+    <link rel="stylesheet" href="/static/static/css/styles.css">
 
     <!--[if lte IE 10]><script src="http://phpbbex.com/oldies/oldies.js" charset="utf-8"></script><![endif]-->
 </head>
@@ -27,24 +27,30 @@
 
             <div class="iframe__footer">
                 <div class="sep__iframe"></div>
-                <button id="iframe__button--open-text"  class="iframe__button">Посмотреть полностью</button>
-                <div class="iframe__footer-info">
+                <a href="https://proto.docnota.io/#/document/{{.Block.DocId}}#block-{{.Block.Id}}" target="_blank">
+                    <button id="iframe__button--open-text"  class="iframe__button">Посмотреть полностью</button>
+                </a>
+                    <div class="iframe__footer-info">
                     <div class="iframe__company">
-                        <svg class="logo__icon"><use xlink:href="/static/imgs/sprite.svg#logo"></use></svg>
-                        ООО "Докнота"
+                        {{if .Company.Id}}
+                            <svg class="logo__icon"><use xlink:href="/static/static/imgs/sprite.svg#logo"></use></svg>
+                            {{.Company.Name}}
+                        {{else}}
+                            <img src="/static/static/users/{{.User.Avatar}}" width="25px", height="25px" alt="">
+                            {{.User.FirstName}} {{.User.LastName}}
+                        {{end}}
                     </div>
                     <div class="iframe__number">
                         #{{.Block.DocId}}
                     </div>
                 </div>
-                <button class="iframe__button iframe__button--update">Есть обновленная версия документа</button>
             </div>
 
         </div>
     </main>
 </div>
-<script src="/static/js/scripts.js"></script>
-<script src="/static/js/custom-scripts.js"></script>
+<script src="/static/static/js/scripts.js"></script>
+<script src="/static/static/js/custom-scripts.js"></script>
 </body>
 </html>
 

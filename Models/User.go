@@ -88,15 +88,19 @@ func (user *User) Get(isOwner bool, db *sql.DB) error{
 			return errors.New("account not confirmed")
 		}
 	}else {
-		err = db.QueryRow(" SELECT email, first_name, last_name, verified, public, country, avatar, confirmed " +
+		err = db.QueryRow(" SELECT email, first_name, last_name, verified, pub, country, avatar, confirmed " +
 								" FROM client " +
 								" JOIN country ON country.id = client.country_id " +
 								" WHERE client.id = $1 AND " +
-								" client.public = TRUE AND " +
-								" client.confirmed = TRUE").Scan(&user.Email, &user.FirstName, &user.LastName, &user.Verified,
-								&user.Public, &user.Country, &user.Avatar, confirm)
+								" client.pub = TRUE AND " +
+								" client.confirmed = TRUE", user.ID).Scan(&user.Email, &user.FirstName, &user.LastName, &user.Verified,
+								&user.Public, &user.Country, &avatar, &confirm)
 		if err != nil {
 			return errors.New("user not exists or access denied")
+		}
+
+		if avatar.Valid{
+			user.Avatar = avatar.String
 		}
 	}
 	return nil
