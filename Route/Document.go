@@ -194,7 +194,7 @@ func blockChainUploadDoc(w http.ResponseWriter, r *http.Request){
 func getDocIFrame(w http.ResponseWriter, r *http.Request){
 	token := ""
 	vars := mux.Vars(r)
-	tmpl, err := template.ParseFiles("Template/fb-iframe.html")
+	tmpl, err := template.ParseFiles("Templates/fb-iframe.html")
 	if err != nil {
 		ErrResponse(errors.New("template not found"), w)
 		return
