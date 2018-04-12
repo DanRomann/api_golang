@@ -27,7 +27,9 @@
 
             <div class="iframe__footer">
                 <div class="sep__iframe"></div>
-                <button id="iframe__button--open-text"  class="iframe__button">Посмотреть полностью</button>
+                <a href="https://proto.docnota.io/#/document/{{.Block.DocId}}" target="_blank">
+                    <button id="iframe__button--open-text"  class="iframe__button">Посмотреть полностью</button>
+                </a>
                 <div class="iframe__footer-info">
                     <div class="iframe__company">
                     {{if .Company.Id}}
