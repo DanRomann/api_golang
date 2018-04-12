@@ -210,7 +210,32 @@ func getDocIFrame(w http.ResponseWriter, r *http.Request){
 		ErrResponse(err, w)
 		return
 	}
+
+	type Iframe struct {
+		Document Models.Document
+		User Models.User
+		Company Models.Company
+	}
+
+	usr, err := Usecases.GetUser(document.UserId, &token, Utils.Connect)
+	if err != nil {
+		println("User not find")
+		//ErrResponse(err, w)
+		//return
+		usr = new(Models.User)
+	}
+
+	company, err := Usecases.GetCompanyByDocument(document.ID, &token, Utils.Connect)
+	if err != nil {
+		println("company not find")
+		//ErrResponse(err, w)
+		//return
+		company = new(Models.Company)
+	}
+
+	iframe := Iframe{Document:*document, User:*usr, Company:*company}
+
 	//result, _ := json.Marshal(document)
 	//DataResponse(result, w)
-	tmpl.Execute(w, document)
+	tmpl.Execute(w, iframe)
 }

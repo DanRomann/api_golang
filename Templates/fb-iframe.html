@@ -19,10 +19,10 @@
 
     <main class="content content--iframe">
         <div class="content__wrapper ">
-            <div class="iframe__title">{{.Name}}</div>
-            <div class="iframe__date">{{.LastUpdated.Day}}-{{.LastUpdated.Month}}-{{.LastUpdated.Year}}</div>
+            <div class="iframe__title">{{.Document.Name}}</div>
+            <div class="iframe__date">{{.Document.LastUpdated.Day}}-{{.Document.LastUpdated.Month}}-{{.Document.LastUpdated.Year}}</div>
             <div class="iframe__description">
-                <span>Описание документа:</span><br>{{.Description}}
+                <span>Описание документа:</span><br>{{.Document.Description}}
             </div>
 
             <div class="iframe__footer">
@@ -30,11 +30,16 @@
                 <button id="iframe__button--open-text"  class="iframe__button">Посмотреть полностью</button>
                 <div class="iframe__footer-info">
                     <div class="iframe__company">
+                    {{if .Company.Id}}
                         <svg class="logo__icon"><use xlink:href="/static/imgs/sprite.svg#logo"></use></svg>
-                        ООО "Докнота"
+                    {{.Company.Name}}
+                    {{else}}
+                        <img src="/static/users/{{.User.Avatar}}" width="25px", height="25px" alt="">
+                    {{.User.FirstName}} {{.User.LastName}}
+                    {{end}}
                     </div>
                     <div class="iframe__number">
-                        #{{.ID}}
+                        #{{.Document.ID}}
                     </div>
                 </div>
             </div>
