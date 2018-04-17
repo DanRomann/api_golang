@@ -11,6 +11,7 @@ import (
 	"io/ioutil"
 	"docnota/Models"
 	"html/template"
+	"strings"
 )
 
 func getPublicDocs(w http.ResponseWriter, r *http.Request){
@@ -234,6 +235,70 @@ func getDocIFrame(w http.ResponseWriter, r *http.Request){
 	}
 
 	iframe := Iframe{Document:*document, User:*usr, Company:*company}
+
+	//result, _ := json.Marshal(document)
+	//DataResponse(result, w)
+	tmpl.Execute(w, iframe)
+}
+
+func getFullDocIFrame(w http.ResponseWriter, r *http.Request){
+	token := ""
+	vars := mux.Vars(r)
+	tmpl, err := template.ParseFiles("Templates/fb-iframe--full.html")
+	if err != nil {
+		ErrResponse(errors.New("template not found"), w)
+		return
+	}
+	docId, err := strconv.Atoi(vars["docId"])
+	if err != nil {
+		ErrResponse(errors.New("bad doc id"), w)
+		return
+	}
+
+	document, err := Usecases.GetDocument(docId, &token, Utils.Connect)
+	if err != nil {
+		ErrResponse(err, w)
+		return
+	}
+
+	type Block struct{
+		Name string
+		Content template.HTML
+		Ltree string
+	}
+
+	type Iframe struct {
+		Document Models.Document
+		User Models.User
+		Company Models.Company
+		Blocks []Block
+	}
+
+	usr, err := Usecases.GetUser(document.UserId, &token, Utils.Connect)
+	if err != nil {
+		println("User not find")
+		//ErrResponse(err, w)
+		//return
+		usr = new(Models.User)
+	}
+
+	company, err := Usecases.GetCompanyByDocument(document.ID, &token, Utils.Connect)
+	if err != nil {
+		println("company not find")
+		//ErrResponse(err, w)
+		//return
+		company = new(Models.Company)
+	}
+
+	blocks := make([]Block, 0)
+
+	for _, b := range document.Blocks{
+		ltree := strings.Split(b.Ltree[1:len(b.Ltree)-1], ",")
+		block := Block{Name:b.Name, Content:template.HTML(b.Content), Ltree:strings.Join(ltree, ".")}
+		blocks = append(blocks, block)
+	}
+
+	iframe := Iframe{Document:*document, User:*usr, Company:*company, Blocks:blocks}
 
 	//result, _ := json.Marshal(document)
 	//DataResponse(result, w)

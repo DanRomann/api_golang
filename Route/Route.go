@@ -64,6 +64,6 @@ func Route() *mux.Router {
 	//iFrame
 	r.HandleFunc("/document/{docId}/iframe", getDocIFrame).Methods("GET")
 	r.HandleFunc("/block/{blockId}/iframe", getBlockIFrame).Methods("GET")
-
+	r.HandleFunc("/document/{docId}/full_iframe", getFullDocIFrame).Methods("GET")
 	return r
 }

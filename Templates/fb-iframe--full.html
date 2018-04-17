@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="ru">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <meta name="description" content="Это описание вашей страницы">
+    <meta name="keywords" content="Ключевые слова страницы...">
+    <meta name="format-detection" content="telephone=no">
+
+    <title>Просмотр документа</title>
+    <link rel="stylesheet" href="/static/css/styles.css">
+
+    <!--[if lte IE 10]><script src="http://phpbbex.com/oldies/oldies.js" charset="utf-8"></script><![endif]-->
+  </head>
+
+  <body class="iframe">
+    <div>     
+
+      <main class="content content--iframe">
+        <div class="content__wrapper content__wrapper--full ">
+          <div class="iframe__title iframe__title--full">
+            <div class="iframe__title-info">
+              <div class="iframe__title-logo"><svg class="logo__icon"><use xlink:href="/static/imgs/sprite.svg#logo"></use></svg></div>
+              <div class="iframe__title-name">{{.Document.Name}}</div>
+            </div>
+            <div class="iframe__title-select">
+              <select name="iframe__select" id="" class="iframe__select">
+                <option value="0">Информация</option>
+                <option value="1">незнаю</option>
+                <option value="2">что </option>
+                <option value="3">здесь</option>
+                <option value="4">должно быть</option>
+              </select>
+              <svg class="user__icon user__icon--drop "><use xlink:href="/static/imgs/sprite.svg#drop"></use></svg>
+              
+              
+            </div>
+          </div>          
+          <div class="iframe__description iframe__description--full">
+            <span>Описание документа:</span>{{.Document.Description}}
+            {{range .Blocks }}
+            <span class="iframe__description-number">{{.Ltree}}</span><span class="iframe__description-title">{{.Name}}:</span>{{.Content}}
+            {{end}}
+          </div>
+          
+          <div class="iframe__footer iframe__footer--full">
+            <div class="sep__iframe"></div>
+            <button id="iframe__button--open-text"  class="iframe__button">Посмотреть полностью</button>
+            <div class="iframe__footer-info iframe__footer-info--full">             
+            </div>
+          </div>
+          
+        </div>
+      </main>      
+    </div>
+    <script src="/static/js/scripts.js"></script>
+    <script src="/static/js/custom-scripts.js"></script>
+  </body>
+</html>
+
